@@ -94,14 +94,13 @@ const BRAND_COLORS = {
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { completeOnboarding } = useAuth();
+  const { setOnboardingComplete } = useAuth(); // Changed from completeOnboarding
   
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [lastTap, setLastTap] = useState(0);
   
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const flatListRef = useRef(null);
 
   // Reasonable max content width
   const maxContentWidth = isLargeDesktop ? 1000 : isDesktop ? 900 : isTablet ? 700 : '100%';
@@ -339,13 +338,31 @@ export default function OnboardingScreen() {
 
   const handleSkip = async () => {
     if (handleDoubleTapProtection()) return;
-    await completeOnboarding();
-    router.replace('/login');
+    try {
+      // Mark onboarding as complete
+      if (setOnboardingComplete) {
+        await setOnboardingComplete(true);
+      }
+      // Navigate to login
+      router.replace('/login');
+    } catch (error) {
+      console.error('Error skipping onboarding:', error);
+      router.replace('/login');
+    }
   };
 
   const handleGetStarted = async () => {
-    await completeOnboarding();
-    router.replace('/login');
+    try {
+      // Mark onboarding as complete
+      if (setOnboardingComplete) {
+        await setOnboardingComplete(true);
+      }
+      // Navigate to login
+      router.replace('/login');
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      router.replace('/login');
+    }
   };
 
   const slideStyle = {
