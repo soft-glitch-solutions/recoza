@@ -13,13 +13,14 @@ interface AuthContextType {
     password: string,
     fullName: string,
     inviteCode?: string
-  ) => Promise<{ error: Error | null }>;
+  ) => Promise<{ success: boolean; error?: string; data?: any }>;
   signIn: (
     email: string,
     password: string
-  ) => Promise<{ error: Error | null }>;
+  ) => Promise<{ success: boolean; error?: string; data?: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  setOnboardingComplete?: (completed: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -109,23 +110,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileError) throw profileError;
 
-      return { error: null };
+      return { success: true, data: authData };
     } catch (error) {
-      return { error: error as Error };
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Registration failed' 
+      };
     }
   };
 
   const signIn = async (email: string, password: string) => {
+    console.log('🔐 [AuthContext] signIn called with email:', email);
+    
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('📞 [AuthContext] Calling Supabase signInWithPassword...');
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
-      return { error: null };
+      console.log('📦 [AuthContext] Supabase response:', { 
+        hasData: !!data, 
+        hasError: !!error,
+        errorMessage: error?.message 
+      });
+
+      if (error) {
+        console.error('❌ [AuthContext] Supabase error:', error);
+        // Return error message string, NOT the error object
+        return { 
+          success: false, 
+          error: error.message || 'Invalid email or password' 
+        };
+      }
+
+      console.log('✅ [AuthContext] Sign in successful');
+      return { success: true, data };
+      
     } catch (error) {
-      return { error: error as Error };
+      console.error('💥 [AuthContext] Unexpected error:', error);
+      // Return error message string, NOT the error object
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'An unexpected error occurred' 
+      };
     }
   };
 
@@ -136,6 +164,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshProfile = async () => {
     if (user) {
       await fetchProfile(user.id);
+    }
+  };
+
+  // Add onboarding completion function
+  const setOnboardingComplete = async (completed: boolean) => {
+    console.log('📝 [AuthContext] Setting onboarding complete:', completed);
+    // You can store this in user metadata or a separate table
+    if (user) {
+      try {
+        const { error } = await supabase.auth.updateUser({
+          data: { onboarding_completed: completed }
+        });
+        if (error) throw error;
+        console.log('✅ [AuthContext] Onboarding complete set successfully');
+      } catch (error) {
+        console.error('❌ [AuthContext] Error setting onboarding complete:', error);
+      }
     }
   };
 
@@ -150,6 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signOut,
         refreshProfile,
+        setOnboardingComplete,
       }}
     >
       {children}

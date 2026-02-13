@@ -1,23 +1,57 @@
-import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
-import OnboardingScreen from '@/components/auth/OnboardingScreen';
+import { Stack, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { RecyclablesProvider } from "@/contexts/RecyclablesContext";
 
-export default function RootScreen() {
+SplashScreen.preventAutoHideAsync();
+
+
+function RootLayoutNav() {
+  const { isLoading, isAuthenticated, hasSeenOnboarding } = useAuth();
+  const segments = useSegments();
   const router = useRouter();
-  const { session, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading) {
-      if (session) {
-        router.replace('/(tabs)');
-      }
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === "(tabs)";
+    const inOnboarding = segments[0] === "onboarding";
+
+    if (!hasSeenOnboarding && !inOnboarding) {
+      router.replace("/onboarding");
+    } else if (!isAuthenticated && hasSeenOnboarding && inAuthGroup) {
+      router.replace("/login");
+    } else if (isAuthenticated && !inAuthGroup) {
+      router.replace("/(tabs)/(home)" as any);
     }
-  }, [session, loading, router]);
+  }, [isLoading, isAuthenticated, hasSeenOnboarding, segments]);
 
-  if (loading) {
-    return null;
-  }
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading]);
 
-  return <OnboardingScreen />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+      <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="register" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <AuthProvider>
+          <RecyclablesProvider>
+            <RootLayoutNav />
+          </RecyclablesProvider>
+        </AuthProvider>
+      </GestureHandlerRootView>
+  );
 }

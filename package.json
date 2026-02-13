@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "start": "expo start -c",
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
     "build:web": "expo export --platform web",
     "lint": "expo lint",
@@ -18,6 +19,7 @@
     "expo": "^54.0.10",
     "expo-blur": "~15.0.7",
     "expo-camera": "~17.0.8",
+    "expo-clipboard": "^8.0.8",
     "expo-constants": "~18.0.9",
     "expo-font": "~14.0.8",
     "expo-haptics": "~15.0.7",
@@ -39,7 +41,8 @@
     "react-native-svg": "15.12.1",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "^0.21.0",
-    "react-native-webview": "13.15.0"
+    "react-native-webview": "13.15.0",
+    "root": "github:tanstack/react-query"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
