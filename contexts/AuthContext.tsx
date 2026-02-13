@@ -1,13 +1,18 @@
+// contexts/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import type { UserProfile } from '@/types/database';
 
-interface AuthContextType {
+// Define the context type
+export interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  hasSeenOnboarding: boolean;
   signUp: (
     email: string,
     password: string,
@@ -20,16 +25,23 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string; data?: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  setOnboardingComplete?: (completed: boolean) => Promise<void>;
+  setOnboardingComplete: (completed: boolean) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Create context
+const AuthContext = createContext<AuthContextType | null>(null);
 
+// Provider component - use function declaration instead of arrow function
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+
+  // Derived state
+  const isAuthenticated = !!user;
+  const isLoading = loading;
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -46,26 +58,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Check local storage for onboarding status (for non-authenticated users)
+  const checkLocalOnboardingStatus = () => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const stored = localStorage.getItem('hasSeenOnboarding');
+        setHasSeenOnboarding(stored === 'true');
+      }
+    } catch (error) {
+      console.error('Error checking local storage:', error);
+    }
+  };
+
   useEffect(() => {
+    console.log('🔧 [AuthProvider] Initializing...');
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('📦 [AuthProvider] Got session:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
+      
       if (session?.user) {
         fetchProfile(session.user.id);
+        // Check onboarding status from user metadata
+        const onboardingCompleted = session.user.user_metadata?.onboarding_completed || false;
+        setHasSeenOnboarding(onboardingCompleted);
+      } else {
+        checkLocalOnboardingStatus();
       }
+      
       setLoading(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('🔄 [AuthProvider] Auth state changed:', _event);
       setSession(session);
       setUser(session?.user ?? null);
+      
       if (session?.user) {
         fetchProfile(session.user.id);
+        const onboardingCompleted = session.user.user_metadata?.onboarding_completed || false;
+        setHasSeenOnboarding(onboardingCompleted);
       } else {
         setProfile(null);
+        checkLocalOnboardingStatus();
       }
+      
       setLoading(false);
     });
 
@@ -82,6 +122,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            onboarding_completed: false
+          }
+        }
       });
 
       if (authError) throw authError;
@@ -110,6 +155,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileError) throw profileError;
 
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('hasSeenOnboarding', 'false');
+      }
+      setHasSeenOnboarding(false);
+
       return { success: true, data: authData };
     } catch (error) {
       return { 
@@ -120,36 +170,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    console.log('🔐 [AuthContext] signIn called with email:', email);
-    
     try {
-      console.log('📞 [AuthContext] Calling Supabase signInWithPassword...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('📦 [AuthContext] Supabase response:', { 
-        hasData: !!data, 
-        hasError: !!error,
-        errorMessage: error?.message 
-      });
-
       if (error) {
-        console.error('❌ [AuthContext] Supabase error:', error);
-        // Return error message string, NOT the error object
         return { 
           success: false, 
-          error: error.message || 'Invalid email or password' 
+          error: error.message 
         };
       }
 
-      console.log('✅ [AuthContext] Sign in successful');
+      if (data.user) {
+        const onboardingCompleted = data.user.user_metadata?.onboarding_completed || false;
+        setHasSeenOnboarding(onboardingCompleted);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('hasSeenOnboarding', onboardingCompleted.toString());
+        }
+      }
+
       return { success: true, data };
       
     } catch (error) {
-      console.error('💥 [AuthContext] Unexpected error:', error);
-      // Return error message string, NOT the error object
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'An unexpected error occurred' 
@@ -159,6 +203,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setHasSeenOnboarding(false);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('hasSeenOnboarding');
+    }
   };
 
   const refreshProfile = async () => {
@@ -167,45 +215,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Add onboarding completion function
   const setOnboardingComplete = async (completed: boolean) => {
-    console.log('📝 [AuthContext] Setting onboarding complete:', completed);
-    // You can store this in user metadata or a separate table
+    setHasSeenOnboarding(completed);
+    
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('hasSeenOnboarding', completed.toString());
+    }
+    
     if (user) {
       try {
         const { error } = await supabase.auth.updateUser({
           data: { onboarding_completed: completed }
         });
         if (error) throw error;
-        console.log('✅ [AuthContext] Onboarding complete set successfully');
       } catch (error) {
-        console.error('❌ [AuthContext] Error setting onboarding complete:', error);
+        console.error('Error setting onboarding complete:', error);
       }
     }
   };
 
+  const value = {
+    session,
+    user,
+    profile,
+    loading,
+    isLoading,
+    isAuthenticated,
+    hasSeenOnboarding,
+    signUp,
+    signIn,
+    signOut,
+    refreshProfile,
+    setOnboardingComplete,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        session,
-        user,
-        profile,
-        loading,
-        signUp,
-        signIn,
-        signOut,
-        refreshProfile,
-        setOnboardingComplete,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
+// Custom hook
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (context === null) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

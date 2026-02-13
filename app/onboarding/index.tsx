@@ -344,10 +344,10 @@ export default function OnboardingScreen() {
         await setOnboardingComplete(true);
       }
       // Navigate to login
-      router.replace('/login');
+      router.replace('./auth/index');
     } catch (error) {
       console.error('Error skipping onboarding:', error);
-      router.replace('/login');
+      router.replace('./auth/index');
     }
   };
 
