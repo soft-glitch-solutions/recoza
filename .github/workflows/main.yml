@@ -17,19 +17,33 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
-        # ✅ Ignores peer dependency mismatches safely in CI only
+      - name: Clean install dependencies
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
+        # Fresh install to ensure all dependencies are properly linked
+
+      - name: Install specific undici version
+        run: npm install undici@5.22.1 --save-exact --legacy-peer-deps
+
+      - name: Ensure react-native-worklets is installed
+        run: npm install react-native-worklets@latest --legacy-peer-deps
+        # Manually install the missing worklets plugin
+
+      - name: Clear Metro bundler cache
+        run: npx expo start --clear
+        # Clear cache to avoid any stale builds
 
       - name: Build the app
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY }}
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
-          npm install undici@5.22.1 --save-exact --legacy-peer-deps
-          npx expo export -p web
-        # ✅ No conflict, Expo web export works fine
+          npx expo export -p web --clear
+        # Added --clear flag to ensure clean export
 
       - name: Deploy to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -42,3 +56,4 @@ jobs:
           local-dir: dist/
           server-dir: /mobile.recoza.co.za/
           cleanup: true
+          dangerous-clean-slate: true
