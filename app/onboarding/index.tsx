@@ -94,7 +94,7 @@ const BRAND_COLORS = {
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { setOnboardingComplete } = useAuth(); // Changed from completeOnboarding
+  const { setOnboardingComplete } = useAuth();
   
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -224,64 +224,60 @@ export default function OnboardingScreen() {
     }
   };
 
-  // Slide transition function
-  const handleSlideTransition = (direction: 'next' | 'prev') => {
+  // Fixed slide transition - simple fade between slides
+  const goToNextSlide = () => {
     if (isTransitioning) return;
-
+    
+    if (currentSlide === slides.length - 1) {
+      handleGetStarted();
+      return;
+    }
+    
     setIsTransitioning(true);
     
-    if (direction === 'next') {
-      // Next slide animation - slide left
-      Animated.timing(slideAnim, {
-        toValue: -width * 0.8,
-        duration: 350,
-        useNativeDriver: true,
-      }).start(() => {
-        if (currentSlide < slides.length - 1) {
-          setCurrentSlide(prev => prev + 1);
-        } else {
-          // Last slide - go to login
-          handleGetStarted();
-          return;
-        }
-
-        slideAnim.setValue(width * 0.5);
-        
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }).start(() => {
-          setIsTransitioning(false);
-        });
-      });
-    } else {
-      // Previous slide animation - slide right
-      if (currentSlide === 0) {
-        setIsTransitioning(false);
-        return;
-      }
+    // Fade out
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentSlide(prev => prev + 1);
       
+      // Reset and fade in
+      slideAnim.setValue(0);
       Animated.timing(slideAnim, {
-        toValue: width * 0.8,
-        duration: 350,
+        toValue: 1,
+        duration: 300,
         useNativeDriver: true,
       }).start(() => {
-        setCurrentSlide(prev => prev - 1);
-        
-        slideAnim.setValue(-width * 0.5);
-        
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }).start(() => {
-          setIsTransitioning(false);
-        });
+        setIsTransitioning(false);
       });
-    }
+    });
+  };
+
+  const goToPrevSlide = () => {
+    if (isTransitioning || currentSlide === 0) return;
+    
+    setIsTransitioning(true);
+    
+    // Fade out
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentSlide(prev => prev - 1);
+      
+      // Reset and fade in
+      slideAnim.setValue(0);
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsTransitioning(false);
+      });
+    });
   };
 
   // PanResponder for swipe gestures
@@ -297,43 +293,28 @@ export default function OnboardingScreen() {
         return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && 
                Math.abs(gestureState.dx) > 10;
       },
-      onPanResponderMove: (_, gestureState) => {
-        if (!isTransitioning) {
-          const constrainedDX = Math.max(Math.min(gestureState.dx, width * 0.5), -width * 0.5);
-          slideAnim.setValue(constrainedDX);
-        }
-      },
       onPanResponderRelease: (_, gestureState) => {
         if (isTransitioning) return;
 
         const swipeThreshold = width * 0.15;
-        const currentDX = gestureState.dx;
-        const swipeVelocity = Math.abs(gestureState.vx);
         
-        if (currentDX < -swipeThreshold || (currentDX < -10 && swipeVelocity > 0.5)) {
-          handleSlideTransition('next');
-        } else if (currentDX > swipeThreshold || (currentDX > 10 && swipeVelocity > 0.5)) {
-          handleSlideTransition('prev');
-        } else {
-          Animated.spring(slideAnim, {
-            toValue: 0,
-            friction: 7,
-            tension: 40,
-            useNativeDriver: true,
-          }).start();
+        if (gestureState.dx < -swipeThreshold) {
+          goToNextSlide();
+        } else if (gestureState.dx > swipeThreshold) {
+          goToPrevSlide();
         }
       },
     })
   ).current;
 
   const handleNext = () => {
-    if (handleDoubleTapProtection() && isTransitioning) return;
-    handleSlideTransition('next');
+    if (handleDoubleTapProtection() || isTransitioning) return;
+    goToNextSlide();
   };
 
   const handleBack = () => {
     if (handleDoubleTapProtection() || isTransitioning || currentSlide === 0) return;
-    handleSlideTransition('prev');
+    goToPrevSlide();
   };
 
   const handleSkip = async () => {
@@ -344,10 +325,10 @@ export default function OnboardingScreen() {
         await setOnboardingComplete(true);
       }
       // Navigate to login
-      router.replace('./auth/index');
+      router.replace('/login');
     } catch (error) {
       console.error('Error skipping onboarding:', error);
-      router.replace('./auth/index');
+      router.replace('/login');
     }
   };
 
@@ -366,19 +347,9 @@ export default function OnboardingScreen() {
   };
 
   const slideStyle = {
-    transform: [
-      { 
-        translateX: slideAnim.interpolate({
-          inputRange: [-width * 0.5, 0, width * 0.5],
-          outputRange: [-width * 0.5, 0, width * 0.5],
-          extrapolate: 'clamp'
-        })
-      },
-    ],
     opacity: slideAnim.interpolate({
-      inputRange: [-width * 0.5, 0, width * 0.5],
-      outputRange: [0.3, 1, 0.3],
-      extrapolate: 'clamp'
+      inputRange: [0, 1],
+      outputRange: [1, 1],
     }),
   };
 
@@ -435,7 +406,7 @@ export default function OnboardingScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Main Content with Slide Animation */}
+          {/* Main Content with Fade Animation */}
           <Animated.View 
             style={[
               styles.mainContent, 
