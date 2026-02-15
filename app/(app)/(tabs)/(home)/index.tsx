@@ -1,11 +1,13 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus, Recycle, TrendingUp, Calendar, Trash2, Leaf, Award, Users } from 'lucide-react-native';
+import { Plus, Recycle, Calendar, Trash2, Leaf, Award, Users, Clock, CheckCircle, TrendingUp } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRecyclables } from '@/contexts/RecyclablesContext';
+import { supabase } from '@/lib/supabase';
 
 const { width, height } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -23,49 +25,126 @@ const scale = (size: number) => {
   return size;
 };
 
+// Recyclable types with icons
+const RECYCLABLE_TYPES = [
+  { type: 'plastic', label: 'Plastic', emoji: '🫙', color: '#2D9B5E' },
+  { type: 'paper', label: 'Paper', emoji: '📰', color: '#3B82F6' },
+  { type: 'glass', label: 'Glass', emoji: '🍾', color: '#F59E0B' },
+  { type: 'metal', label: 'Metal', emoji: '🥫', color: '#EF4444' },
+  { type: 'cardboard', label: 'Cardboard', emoji: '📦', color: '#8B5CF6' },
+];
+
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { 
+    items = [], 
+    collections = [], 
+    loading,
+    fetchRecyclableItems,
+    fetchCollections,
+    deleteRecyclableItem 
+  } = useRecyclables();
+  
   const [refreshing, setRefreshing] = useState(false);
-  
-  // Mock data
-  const estimatedEarnings = 245.50;
-  const totalWeight = 12.5;
-  const impactStats = {
-    co2Saved: 18.75,
-    treesSaved: 2.5,
-    waterSaved: 1250,
-  };
-  
-  const recyclableTypes = [
-    { type: 'plastic', label: 'Plastic', price: 12, emoji: '🫙', color: '#2D9B5E' },
-    { type: 'paper', label: 'Paper', price: 8, emoji: '📰', color: '#3B82F6' },
-    { type: 'glass', label: 'Glass', price: 5, emoji: '🍾', color: '#F59E0B' },
-    { type: 'metal', label: 'Metal', price: 15, emoji: '🥫', color: '#EF4444' },
-    { type: 'cardboard', label: 'Cardboard', price: 7, emoji: '📦', color: '#8B5CF6' },
-  ];
-  
-  const weeklyItems = [
-    { type: 'plastic', weight: 2.5, value: 30 },
-    { type: 'paper', weight: 1.8, value: 14.40 },
-    { type: 'glass', weight: 3.2, value: 16 },
-    ...(isDesktop ? [{ type: 'metal', weight: 1.2, value: 18 }] : []),
-  ];
-  
-  const recentLogs = [
-    { id: '1', type: 'plastic', quantity: 5, unit: 'kg', date: new Date('2024-02-10T10:30:00') },
-    { id: '2', type: 'glass', quantity: 3, unit: 'kg', date: new Date('2024-02-09T15:45:00') },
-    { id: '3', type: 'paper', quantity: 2, unit: 'kg', date: new Date('2024-02-08T09:15:00') },
-    ...(isDesktop ? [
-      { id: '4', type: 'metal', quantity: 1.5, unit: 'kg', date: new Date('2024-02-07T14:20:00') }
-    ] : []),
-  ];
+  const [weeklyStats, setWeeklyStats] = useState({
+    totalWeight: 0,
+    itemCount: 0,
+  });
+  const [impactStats, setImpactStats] = useState({
+    co2Saved: 0,
+    treesSaved: 0,
+    waterSaved: 0,
+  });
+  const [weeklyItems, setWeeklyItems] = useState<any[]>([]);
+  const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [upcomingCollections, setUpcomingCollections] = useState<any[]>([]);
 
-  const onRefresh = useCallback(() => {
+  // Check if user is a collector
+  const isCollector = user?.is_collector === true;
+
+  // Calculate statistics from real data
+  useEffect(() => {
+    if (items && items.length > 0) {
+      // Calculate weekly items (last 7 days)
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      
+      const weekly = items.filter(item => new Date(item.created_at) >= weekAgo);
+      setWeeklyItems(weekly);
+      
+      // Calculate weekly stats
+      const stats = weekly.reduce((acc, item) => {
+        const weight = item.unit === 'kg' ? item.quantity : item.quantity * 0.05;
+        
+        return {
+          totalWeight: acc.totalWeight + weight,
+          itemCount: acc.itemCount + 1,
+        };
+      }, { totalWeight: 0, itemCount: 0 });
+      
+      setWeeklyStats(stats);
+      
+      // Calculate impact stats (always show these to everyone)
+      setImpactStats({
+        co2Saved: stats.totalWeight * 2.5,
+        treesSaved: (stats.totalWeight * 2.5) / 21,
+        waterSaved: stats.totalWeight * 17,
+      });
+      
+      // Get recent logs (last 5 items)
+      setRecentLogs(items.slice(0, 5));
+    }
+  }, [items]);
+
+  // Get upcoming collections (only for collectors)
+  useEffect(() => {
+    if (isCollector && collections && collections.length > 0) {
+      const upcoming = collections
+        .filter(c => c.status === 'scheduled')
+        .sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime())
+        .slice(0, 3);
+      
+      setUpcomingCollections(upcoming);
+    }
+  }, [collections, isCollector]);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    try {
+      await Promise.all([
+        fetchRecyclableItems(),
+        fetchCollections(),
+      ]);
+    } catch (error) {
+      console.error('Error refreshing:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchRecyclableItems, fetchCollections]);
+
+  const handleDeleteItem = (itemId: string) => {
+    Alert.alert(
+      'Delete Item',
+      'Are you sure you want to delete this item?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            const result = await deleteRecyclableItem(itemId);
+            if (result.success) {
+              Alert.alert('Success', 'Item deleted successfully');
+            } else {
+              Alert.alert('Error', result.error || 'Failed to delete item');
+            }
+          }
+        },
+      ]
+    );
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -75,18 +154,30 @@ export default function HomeScreen() {
   };
 
   const getIcon = (type: string) => {
-    const item = recyclableTypes.find(t => t.type === type);
+    const item = RECYCLABLE_TYPES.find(t => t.type === type);
     return item?.emoji || '♻️';
   };
 
   const getLabel = (type: string) => {
-    const item = recyclableTypes.find(t => t.type === type);
+    const item = RECYCLABLE_TYPES.find(t => t.type === type);
     return item?.label || type;
   };
 
   const getColor = (type: string) => {
-    const item = recyclableTypes.find(t => t.type === type);
+    const item = RECYCLABLE_TYPES.find(t => t.type === type);
     return item?.color || Colors.primary;
+  };
+
+  // Format date nicely
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
   };
 
   // Desktop layout configuration
@@ -110,7 +201,7 @@ export default function HomeScreen() {
       };
     }
     return {
-      contentMaxWidth: '100%',
+      contentMaxWidth: '100%' as const,
       paddingHorizontal: 20,
       gridColumns: 1,
       showImpactSection: false,
@@ -147,7 +238,7 @@ export default function HomeScreen() {
               {getGreeting()}
             </Text>
             <Text style={[styles.userName, isDesktop && { fontSize: scale(32) }]}>
-              {user?.name || 'Recycler'}
+              {user?.full_name?.split(' ')[0] || 'Recycler'}
             </Text>
           </View>
           <View style={styles.headerRight}>
@@ -165,9 +256,9 @@ export default function HomeScreen() {
         </View>
       </LinearGradient>
 
-      {/* Earnings Card - Separate from header */}
+      {/* Stats Card - Different for households vs collectors */}
       <View style={[
-        styles.earningsCardWrapper,
+        styles.statsCardWrapper,
         {
           paddingHorizontal: layout.paddingHorizontal,
           maxWidth: layout.contentMaxWidth,
@@ -180,49 +271,95 @@ export default function HomeScreen() {
         <LinearGradient
           colors={['#ffffff', '#f8f9fa']}
           style={[
-            styles.earningsCard,
-            isDesktop && styles.earningsCardDesktop
+            styles.statsCard,
+            isDesktop && styles.statsCardDesktop
           ]}
         >
-          <View style={styles.earningsRow}>
-            <View style={styles.earningsLeft}>
-              <View style={styles.earningsHeader}>
-                <TrendingUp size={isDesktop ? 24 : 20} color={Colors.primary} />
-                <Text style={[styles.earningsLabel, isDesktop && { fontSize: scale(18) }]}>
-                  Estimated Earnings
+          <View style={styles.statsRow}>
+            <View style={styles.statsLeft}>
+              <View style={styles.statsHeader}>
+                <Leaf size={isDesktop ? 24 : 20} color={Colors.primary} />
+                <Text style={[styles.statsLabel, isDesktop && { fontSize: scale(18) }]}>
+                  Your Impact
                 </Text>
               </View>
-              <Text style={[styles.earningsAmount, isDesktop && { fontSize: scale(48) }]}>
-                R{estimatedEarnings.toFixed(2)}
-              </Text>
-              <Text style={[styles.earningsSubtext, isDesktop && { fontSize: scale(16) }]}>
-                {totalWeight.toFixed(1)}kg ready for collection
-              </Text>
+              
+              <View style={styles.impactMetrics}>
+                <View style={styles.impactMetric}>
+                  <Text style={[styles.impactValue, isDesktop && { fontSize: scale(28) }]}>
+                    {weeklyStats.totalWeight.toFixed(1)}kg
+                  </Text>
+                  <Text style={[styles.impactMetricLabel, isDesktop && { fontSize: scale(14) }]}>
+                    Recycled this week
+                  </Text>
+                </View>
+                
+                <View style={styles.impactMetric}>
+                  <Text style={[styles.impactValue, isDesktop && { fontSize: scale(28) }]}>
+                    {weeklyStats.itemCount}
+                  </Text>
+                  <Text style={[styles.impactMetricLabel, isDesktop && { fontSize: scale(14) }]}>
+                    Items logged
+                  </Text>
+                </View>
+              </View>
+
+              {/* Environmental Impact - Show to everyone */}
+              <View style={styles.environmentalImpact}>
+                <Text style={styles.environmentalTitle}>🌍 Environmental Impact</Text>
+                <View style={styles.environmentalMetrics}>
+                  <View style={styles.environmentalMetric}>
+                    <Text style={styles.environmentalValue}>{impactStats.co2Saved.toFixed(1)}kg</Text>
+                    <Text style={styles.environmentalLabel}>CO₂ Saved</Text>
+                  </View>
+                  <View style={styles.environmentalMetric}>
+                    <Text style={styles.environmentalValue}>{impactStats.waterSaved.toFixed(0)}L</Text>
+                    <Text style={styles.environmentalLabel}>Water Saved</Text>
+                  </View>
+                  <View style={styles.environmentalMetric}>
+                    <Text style={styles.environmentalValue}>{impactStats.treesSaved.toFixed(1)}</Text>
+                    <Text style={styles.environmentalLabel}>Trees Saved</Text>
+                  </View>
+                </View>
+              </View>
             </View>
             
-            {/* Desktop impact stats */}
+            {/* Desktop impact stats - Only show environmental stats */}
             {isDesktop && (
-              <View style={styles.impactStats}>
-                <View style={styles.impactStat}>
+              <View style={styles.desktopImpactStats}>
+                <View style={styles.desktopImpactStat}>
                   <Leaf size={24} color={Colors.primary} />
-                  <Text style={styles.impactValue}>{impactStats.co2Saved}kg</Text>
-                  <Text style={styles.impactLabel}>CO₂ Saved</Text>
+                  <Text style={styles.desktopImpactValue}>{impactStats.co2Saved.toFixed(1)}kg</Text>
+                  <Text style={styles.desktopImpactLabel}>CO₂ Saved</Text>
                 </View>
                 <View style={styles.impactDivider} />
-                <View style={styles.impactStat}>
+                <View style={styles.desktopImpactStat}>
                   <Award size={24} color={Colors.primary} />
-                  <Text style={styles.impactValue}>{impactStats.treesSaved}</Text>
-                  <Text style={styles.impactLabel}>Trees Saved</Text>
+                  <Text style={styles.desktopImpactValue}>{impactStats.waterSaved.toFixed(0)}L</Text>
+                  <Text style={styles.desktopImpactLabel}>Water Saved</Text>
                 </View>
                 <View style={styles.impactDivider} />
-                <View style={styles.impactStat}>
+                <View style={styles.desktopImpactStat}>
                   <Users size={24} color={Colors.primary} />
-                  <Text style={styles.impactValue}>{impactStats.waterSaved}L</Text>
-                  <Text style={styles.impactLabel}>Water Saved</Text>
+                  <Text style={styles.desktopImpactValue}>{impactStats.treesSaved.toFixed(1)}</Text>
+                  <Text style={styles.desktopImpactLabel}>Trees Saved</Text>
                 </View>
               </View>
             )}
           </View>
+
+          {/* Collector-only earnings section */}
+          {isCollector && (
+            <View style={styles.collectorEarnings}>
+              <View style={styles.earningsDivider} />
+              <View style={styles.earningsRow}>
+                <TrendingUp size={20} color={Colors.primary} />
+                <Text style={styles.earningsText}>
+                  You've earned R{weeklyStats.totalWeight * 8} this week as a collector
+                </Text>
+              </View>
+            </View>
+          )}
         </LinearGradient>
       </View>
 
@@ -247,7 +384,7 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Quick Log Section */}
+        {/* Quick Log Section - Same for everyone */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, isDesktop && { fontSize: scale(24) }]}>
@@ -265,7 +402,7 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false} 
             style={styles.quickLogScroll}
           >
-            {recyclableTypes.map((item) => (
+            {RECYCLABLE_TYPES.map((item) => (
               <TouchableOpacity
                 key={item.type}
                 style={[
@@ -299,16 +436,51 @@ export default function HomeScreen() {
                 ]}>
                   {item.label}
                 </Text>
-                <Text style={[
-                  styles.quickLogPrice,
-                  isDesktop && { fontSize: scale(14) }
-                ]}>
-                  R{item.price}/kg
-                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
+
+        {/* Upcoming Collections - Only for collectors */}
+        {isCollector && upcomingCollections.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, isDesktop && { fontSize: scale(24) }]}>
+                Upcoming Collections
+              </Text>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/collections')}>
+                <Text style={[styles.seeAllText, isDesktop && { fontSize: scale(16) }]}>
+                  View all
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {upcomingCollections.map((collection) => (
+              <View key={collection.id} style={[
+                styles.collectionCard,
+                isDesktop && { padding: scale(20), marginBottom: scale(12), borderRadius: scale(16) }
+              ]}>
+                <View style={styles.collectionHeader}>
+                  <View style={styles.collectionInfo}>
+                    <Text style={[styles.collectionDate, isDesktop && { fontSize: scale(16) }]}>
+                      <Calendar size={14} color={Colors.primary} /> {new Date(collection.scheduled_date).toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    </Text>
+                  </View>
+                  <View style={[styles.collectionBadge, { backgroundColor: Colors.warning + '20' }]}>
+                    <Clock size={14} color={Colors.warning} />
+                    <Text style={[styles.collectionStatus, { color: Colors.warning }]}>Scheduled</Text>
+                  </View>
+                </View>
+                <Text style={[styles.collectionHousehold, isDesktop && { fontSize: scale(18) }]}>
+                  {collection.household?.full_name || 'Household'}
+                </Text>
+                <Text style={[styles.collectionEstimate, isDesktop && { fontSize: scale(14) }]}>
+                  Est. {collection.total_weight_kg?.toFixed(1)}kg
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Two column layout for desktop */}
         <View style={[
@@ -340,49 +512,59 @@ export default function HomeScreen() {
 
             {weeklyItems.length > 0 ? (
               <View style={styles.itemsGrid}>
-                {weeklyItems.map((item, index) => (
-                  <View key={index} style={[
-                    styles.itemCard,
-                    isDesktop && { padding: scale(20) }
-                  ]}>
-                    <View style={[
-                      styles.itemIconContainer,
-                      { 
-                        backgroundColor: getColor(item.type) + '15',
-                        width: isDesktop ? scale(60) : 48,
-                        height: isDesktop ? scale(60) : 48,
-                        borderRadius: isDesktop ? scale(16) : 12,
-                      }
+                {weeklyItems.slice(0, isDesktop ? 5 : 3).map((item, index) => {
+                  const weight = item.unit === 'kg' ? item.quantity : item.quantity * 0.05;
+                  
+                  return (
+                    <View key={item.id} style={[
+                      styles.itemCard,
+                      isDesktop && { padding: scale(20) }
                     ]}>
-                      <Text style={[
-                        styles.itemEmoji,
-                        isDesktop && { fontSize: scale(28) }
+                      <View style={[
+                        styles.itemIconContainer,
+                        { 
+                          backgroundColor: getColor(item.type) + '15',
+                          width: isDesktop ? scale(60) : 48,
+                          height: isDesktop ? scale(60) : 48,
+                          borderRadius: isDesktop ? scale(16) : 12,
+                        }
                       ]}>
-                        {getIcon(item.type)}
-                      </Text>
+                        <Text style={[
+                          styles.itemEmoji,
+                          isDesktop && { fontSize: scale(28) }
+                        ]}>
+                          {getIcon(item.type)}
+                        </Text>
+                      </View>
+                      <View style={styles.itemInfo}>
+                        <Text style={[
+                          styles.itemType,
+                          isDesktop && { fontSize: scale(18) }
+                        ]}>
+                          {item.item_name || getLabel(item.type)}
+                        </Text>
+                        <Text style={[
+                          styles.itemWeight,
+                          isDesktop && { fontSize: scale(16) }
+                        ]}>
+                          {weight.toFixed(1)} kg
+                        </Text>
+                        <Text style={[
+                          styles.itemDate,
+                          isDesktop && { fontSize: scale(14) }
+                        ]}>
+                          {formatDate(item.created_at)}
+                        </Text>
+                      </View>
+                      <TouchableOpacity 
+                        style={[styles.deleteButton, isDesktop && { padding: scale(10) }]}
+                        onPress={() => handleDeleteItem(item.id)}
+                      >
+                        <Trash2 size={isDesktop ? 20 : 18} color={Colors.error} />
+                      </TouchableOpacity>
                     </View>
-                    <View style={styles.itemInfo}>
-                      <Text style={[
-                        styles.itemType,
-                        isDesktop && { fontSize: scale(18) }
-                      ]}>
-                        {getLabel(item.type)}
-                      </Text>
-                      <Text style={[
-                        styles.itemWeight,
-                        isDesktop && { fontSize: scale(16) }
-                      ]}>
-                        {item.weight.toFixed(1)} kg
-                      </Text>
-                    </View>
-                    <Text style={[
-                      styles.itemValue,
-                      isDesktop && { fontSize: scale(20) }
-                    ]}>
-                      R{item.value.toFixed(2)}
-                    </Text>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             ) : (
               <View style={[
@@ -400,7 +582,7 @@ export default function HomeScreen() {
             )}
           </View>
 
-          {/* Recent Logs - Right column on desktop */}
+          {/* Recent Logs */}
           <View style={[
             styles.section,
             isDesktop && styles.desktopGridItem
@@ -409,61 +591,59 @@ export default function HomeScreen() {
               Recent Logs
             </Text>
             
-            {recentLogs.map((item) => (
-              <View key={item.id} style={[
-                styles.recentItem,
-                isDesktop && { padding: scale(16), marginBottom: scale(12), borderRadius: scale(14) }
+            {recentLogs.length > 0 ? (
+              recentLogs.slice(0, isDesktop ? 6 : 4).map((item) => {
+                const weight = item.unit === 'kg' ? item.quantity : item.quantity * 0.05;
+                
+                return (
+                  <View key={item.id} style={[
+                    styles.recentItem,
+                    isDesktop && { padding: scale(16), marginBottom: scale(12), borderRadius: scale(14) }
+                  ]}>
+                    <View style={[
+                      styles.recentItemIcon,
+                      { 
+                        backgroundColor: getColor(item.type) + '15',
+                        width: isDesktop ? scale(48) : 40,
+                        height: isDesktop ? scale(48) : 40,
+                        borderRadius: isDesktop ? scale(12) : 10,
+                      }
+                    ]}>
+                      <Text style={isDesktop && { fontSize: scale(20) }}>
+                        {getIcon(item.type)}
+                      </Text>
+                    </View>
+                    <View style={styles.recentItemInfo}>
+                      <Text style={[
+                        styles.recentItemType,
+                        isDesktop && { fontSize: scale(16) }
+                      ]}>
+                        {item.item_name || getLabel(item.type)}
+                      </Text>
+                      <Text style={[
+                        styles.recentItemDate,
+                        isDesktop && { fontSize: scale(14) }
+                      ]}>
+                        {formatDate(item.created_at)} • {weight.toFixed(1)}kg
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })
+            ) : (
+              <View style={[
+                styles.emptyStateSmall,
+                isDesktop && { padding: scale(40), borderRadius: scale(16) }
               ]}>
-                <View style={[
-                  styles.recentItemIcon,
-                  { 
-                    backgroundColor: getColor(item.type) + '15',
-                    width: isDesktop ? scale(48) : 40,
-                    height: isDesktop ? scale(48) : 40,
-                    borderRadius: isDesktop ? scale(12) : 10,
-                  }
-                ]}>
-                  <Text style={isDesktop && { fontSize: scale(20) }}>
-                    {getIcon(item.type)}
-                  </Text>
-                </View>
-                <View style={styles.recentItemInfo}>
-                  <Text style={[
-                    styles.recentItemType,
-                    isDesktop && { fontSize: scale(16) }
-                  ]}>
-                    {getLabel(item.type)}
-                  </Text>
-                  <Text style={[
-                    styles.recentItemDate,
-                    isDesktop && { fontSize: scale(14) }
-                  ]}>
-                    {item.date.toLocaleDateString('en-ZA', { 
-                      day: 'numeric', 
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </Text>
-                </View>
-                <Text style={[
-                  styles.recentItemQuantity,
-                  isDesktop && { fontSize: scale(16) }
-                ]}>
-                  {item.quantity} {item.unit}
+                <Text style={[styles.emptyStateTextSmall, isDesktop && { fontSize: scale(16) }]}>
+                  No items logged yet
                 </Text>
-                <TouchableOpacity 
-                  style={[styles.deleteButton, isDesktop && { padding: scale(10) }]}
-                  onPress={() => console.log('Delete', item.id)}
-                >
-                  <Trash2 size={isDesktop ? 20 : 18} color={Colors.error} />
-                </TouchableOpacity>
               </View>
-            ))}
+            )}
           </View>
         </View>
 
-        {/* Tablet impact section */}
+        {/* Tablet impact section - Show environmental impact */}
         {isTablet && !isDesktop && (
           <View style={styles.tabletImpactSection}>
             <LinearGradient
@@ -473,18 +653,18 @@ export default function HomeScreen() {
               <View style={styles.impactStatRow}>
                 <View style={styles.impactStat}>
                   <Leaf size={20} color={Colors.primary} />
-                  <Text style={styles.impactValueSmall}>{impactStats.co2Saved}kg</Text>
+                  <Text style={styles.impactValueSmall}>{impactStats.co2Saved.toFixed(1)}kg</Text>
                   <Text style={styles.impactLabelSmall}>CO₂ Saved</Text>
                 </View>
                 <View style={styles.impactStat}>
                   <Award size={20} color={Colors.primary} />
-                  <Text style={styles.impactValueSmall}>{impactStats.treesSaved}</Text>
-                  <Text style={styles.impactLabelSmall}>Trees Saved</Text>
+                  <Text style={styles.impactValueSmall}>{impactStats.waterSaved.toFixed(0)}L</Text>
+                  <Text style={styles.impactLabelSmall}>Water Saved</Text>
                 </View>
                 <View style={styles.impactStat}>
                   <Users size={20} color={Colors.primary} />
-                  <Text style={styles.impactValueSmall}>{impactStats.waterSaved}L</Text>
-                  <Text style={styles.impactLabelSmall}>Water Saved</Text>
+                  <Text style={styles.impactValueSmall}>{impactStats.treesSaved.toFixed(1)}</Text>
+                  <Text style={styles.impactLabelSmall}>Trees Saved</Text>
                 </View>
               </View>
             </LinearGradient>
@@ -565,11 +745,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  earningsCardWrapper: {
+  statsCardWrapper: {
     width: '100%',
     zIndex: 10,
   },
-  earningsCard: {
+  statsCard: {
     backgroundColor: Colors.white,
     padding: 20,
     borderRadius: 16,
@@ -579,55 +759,93 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 5,
   },
-  earningsCardDesktop: {
+  statsCardDesktop: {
     paddingVertical: 32,
     borderRadius: 24,
   },
-  earningsRow: {
+  statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  earningsLeft: {
+  statsLeft: {
     flex: 1,
   },
-  earningsHeader: {
+  statsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 16,
   },
-  earningsLabel: {
+  statsLabel: {
     fontSize: 14,
     color: Colors.textSecondary,
     fontWeight: '500',
   },
-  earningsAmount: {
-    fontSize: 36,
+  impactMetrics: {
+    flexDirection: 'row',
+    gap: 24,
+    marginBottom: 20,
+  },
+  impactMetric: {
+    flex: 1,
+  },
+  impactValue: {
+    fontSize: 24,
     fontWeight: '700',
     color: Colors.text,
-    marginBottom: 4,
   },
-  earningsSubtext: {
-    fontSize: 13,
+  impactMetricLabel: {
+    fontSize: 12,
     color: Colors.textSecondary,
+    marginTop: 2,
   },
-  impactStats: {
+  environmentalImpact: {
+    backgroundColor: Colors.surfaceSecondary,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  environmentalTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 12,
+  },
+  environmentalMetrics: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  environmentalMetric: {
+    alignItems: 'center',
+  },
+  environmentalValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  environmentalLabel: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  desktopImpactStats: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 32,
+    marginLeft: 20,
   },
-  impactStat: {
+  desktopImpactStat: {
     alignItems: 'center',
   },
-  impactValue: {
-    fontSize: 20,
+  desktopImpactValue: {
+    fontSize: 18,
     fontWeight: '700',
     color: Colors.text,
     marginTop: 8,
   },
-  impactLabel: {
-    fontSize: 14,
+  desktopImpactLabel: {
+    fontSize: 12,
     color: Colors.textSecondary,
     marginTop: 4,
   },
@@ -635,6 +853,25 @@ const styles = StyleSheet.create({
     width: 1,
     height: 40,
     backgroundColor: Colors.border,
+  },
+  collectorEarnings: {
+    marginTop: 16,
+  },
+  earningsDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginBottom: 16,
+  },
+  earningsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 8,
+  },
+  earningsText: {
+    fontSize: 15,
+    color: Colors.primary,
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,
@@ -684,11 +921,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.text,
     textAlign: 'center',
-  },
-  quickLogPrice: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginTop: 2,
   },
   weekBadge: {
     flexDirection: 'row',
@@ -747,10 +979,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textSecondary,
   },
-  itemValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.primary,
+  itemDate: {
+    fontSize: 11,
+    color: Colors.textLight,
+    marginTop: 2,
   },
   emptyState: {
     alignItems: 'center',
@@ -769,6 +1001,16 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 4,
     textAlign: 'center',
+  },
+  emptyStateSmall: {
+    alignItems: 'center',
+    padding: 30,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+  },
+  emptyStateTextSmall: {
+    fontSize: 14,
+    color: Colors.textSecondary,
   },
   recentItem: {
     flexDirection: 'row',
@@ -801,11 +1043,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textSecondary,
   },
-  recentItemQuantity: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text,
-  },
   deleteButton: {
     padding: 8,
   },
@@ -824,6 +1061,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
   },
+  impactStat: {
+    alignItems: 'center',
+  },
   impactValueSmall: {
     fontSize: 16,
     fontWeight: '700',
@@ -834,6 +1074,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textSecondary,
     marginTop: 2,
+  },
+  collectionCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  collectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  collectionInfo: {
+    flex: 1,
+  },
+  collectionDate: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  collectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  collectionStatus: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  collectionHousehold: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  collectionEstimate: {
+    fontSize: 13,
+    color: Colors.textSecondary,
   },
   fab: {
     position: 'absolute',
