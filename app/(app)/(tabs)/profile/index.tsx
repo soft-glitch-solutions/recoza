@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, StatusBar, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
   User, 
@@ -152,7 +152,7 @@ export default function ProfileScreen() {
         {
           icon: <User size={20} color={Colors.primary} />,
           label: 'Edit Profile',
-          onPress: () => Alert.alert('Coming Soon', 'Profile editing will be available soon'),
+          onPress: () => router.push('../profile/edit'),
           color: Colors.primary,
           bg: '#E0F2FE',
         },
@@ -160,14 +160,14 @@ export default function ProfileScreen() {
           icon: <Mail size={20} color={Colors.primary} />,
           label: 'Email',
           value: user?.email,
-          onPress: () => Alert.alert('Coming Soon', 'Email settings coming soon'),
+          onPress: () => Alert.alert('Info', 'Your email is used for account recovery and notifications'),
           color: Colors.primary,
           bg: '#E0F2FE',
         },
         {
           icon: <Shield size={20} color={Colors.primary} />,
           label: 'Privacy & Security',
-          onPress: () => Alert.alert('Coming Soon', 'Privacy settings coming soon'),
+          onPress: () => router.push('../profile/privacy'),
           color: Colors.primary,
           bg: '#E0F2FE',
         },
@@ -180,7 +180,7 @@ export default function ProfileScreen() {
           icon: <Bell size={20} color="#F59E0B" />,
           label: 'Notifications',
           value: 'Manage alerts',
-          onPress: () => Alert.alert('Coming Soon', 'Notification preferences coming soon'),
+          onPress: () => router.push('../profile/notifications'),
           color: '#F59E0B',
           bg: '#FEF3C7',
         },
@@ -201,7 +201,7 @@ export default function ProfileScreen() {
           icon: <HelpCircle size={20} color="#3B82F6" />,
           label: 'Help & Support',
           value: 'FAQs, contact us',
-          onPress: () => Alert.alert('Coming Soon', 'Help center coming soon'),
+          onPress: () => router.push('../profile/help'),
           color: '#3B82F6',
           bg: '#DBEAFE',
         },
@@ -222,10 +222,19 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header with Gradient */}
+      {/* Status Bar - Light content for gradient header */}
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      {/* Header with Gradient - Using insets for proper padding */}
       <LinearGradient
         colors={['#059669', '#047857', '#065F46']}
-        style={[styles.header, { paddingTop: insets.top + 16 }]}
+        style={[
+          styles.header, 
+          { 
+            paddingTop: insets.top + 16, // Safe area + extra padding
+            paddingBottom: 32,
+          }
+        ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
@@ -235,7 +244,7 @@ export default function ProfileScreen() {
             style={styles.avatar}
           >
             <Text style={styles.avatarText}>
-              {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+              {user?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
             </Text>
           </LinearGradient>
           {statusBadge && (
@@ -248,7 +257,7 @@ export default function ProfileScreen() {
           )}
         </View>
         
-        <Text style={styles.userName}>{user?.name || 'Recoza User'}</Text>
+        <Text style={styles.userName}>{user?.full_name || 'Recoza User'}</Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
         
         {statusBadge && (
@@ -266,10 +275,15 @@ export default function ProfileScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[
+          styles.contentContainer, 
+          { 
+            paddingBottom: insets.bottom + 100, // Safe area + extra padding for bottom
+          }
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Stats Cards */}
+        {/* Stats Cards - With negative margin to overlap header */}
         <View style={styles.statsGrid}>
           <LinearGradient
             colors={['#FFFFFF', '#F9FAFB']}
@@ -455,6 +469,9 @@ export default function ProfileScreen() {
 
         <Text style={styles.versionText}>Recoza v1.0.0 • Making South Africa Greener</Text>
       </ScrollView>
+
+      {/* Bottom safe area spacer for devices with home indicator */}
+      {Platform.OS === 'ios' && <View style={{ height: insets.bottom }} />}
     </View>
   );
 }
@@ -466,7 +483,6 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingBottom: 32,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     shadowColor: '#000',

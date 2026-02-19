@@ -1,13 +1,12 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus, Recycle, Calendar, Trash2, Leaf, Award, Users, Clock, CheckCircle, TrendingUp } from 'lucide-react-native';
+import { Recycle, Calendar, Trash2, Leaf, Award, Users, Clock, TrendingUp, ChevronRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useCallback, useEffect } from 'react';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
-import { supabase } from '@/lib/supabase';
 
 const { width, height } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -25,13 +24,13 @@ const scale = (size: number) => {
   return size;
 };
 
-// Recyclable types with icons
+// Recyclable types with icons - Made more prominent
 const RECYCLABLE_TYPES = [
-  { type: 'plastic', label: 'Plastic', emoji: '🫙', color: '#2D9B5E' },
-  { type: 'paper', label: 'Paper', emoji: '📰', color: '#3B82F6' },
-  { type: 'glass', label: 'Glass', emoji: '🍾', color: '#F59E0B' },
-  { type: 'metal', label: 'Metal', emoji: '🥫', color: '#EF4444' },
-  { type: 'cardboard', label: 'Cardboard', emoji: '📦', color: '#8B5CF6' },
+  { type: 'plastic', label: 'Plastic', emoji: '🫙', color: '#2D9B5E', bgColor: '#2D9B5E20' },
+  { type: 'paper', label: 'Paper', emoji: '📰', color: '#3B82F6', bgColor: '#3B82F620' },
+  { type: 'glass', label: 'Glass', emoji: '🍾', color: '#F59E0B', bgColor: '#F59E0B20' },
+  { type: 'metal', label: 'Metal', emoji: '🥫', color: '#EF4444', bgColor: '#EF444420' },
+  { type: 'cardboard', label: 'Cardboard', emoji: '📦', color: '#8B5CF6', bgColor: '#8B5CF620' },
 ];
 
 export default function HomeScreen() {
@@ -86,7 +85,7 @@ export default function HomeScreen() {
       
       setWeeklyStats(stats);
       
-      // Calculate impact stats (always show these to everyone)
+      // Calculate impact stats
       setImpactStats({
         co2Saved: stats.totalWeight * 2.5,
         treesSaved: (stats.totalWeight * 2.5) / 21,
@@ -256,7 +255,7 @@ export default function HomeScreen() {
         </View>
       </LinearGradient>
 
-      {/* Stats Card - Different for households vs collectors */}
+      {/* Stats Card */}
       <View style={[
         styles.statsCardWrapper,
         {
@@ -304,7 +303,7 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              {/* Environmental Impact - Show to everyone */}
+              {/* Environmental Impact */}
               <View style={styles.environmentalImpact}>
                 <Text style={styles.environmentalTitle}>🌍 Environmental Impact</Text>
                 <View style={styles.environmentalMetrics}>
@@ -324,7 +323,7 @@ export default function HomeScreen() {
               </View>
             </View>
             
-            {/* Desktop impact stats - Only show environmental stats */}
+            {/* Desktop impact stats */}
             {isDesktop && (
               <View style={styles.desktopImpactStats}>
                 <View style={styles.desktopImpactStat}>
@@ -372,6 +371,7 @@ export default function HomeScreen() {
             maxWidth: layout.contentMaxWidth,
             alignSelf: 'center',
             width: '100%',
+            paddingBottom: 20,
           }
         ]}
         showsVerticalScrollIndicator={false}
@@ -384,61 +384,66 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Quick Log Section - Same for everyone */}
+        {/* Quick Log Section - Primary way to add items */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, isDesktop && { fontSize: scale(24) }]}>
-              Quick Log
+              What are you recycling?
             </Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/(home)/log-item')}>
-              <Text style={[styles.seeAllText, isDesktop && { fontSize: scale(16) }]}>
-                See all
-              </Text>
-            </TouchableOpacity>
+            <Text style={[styles.quickLogHint, isDesktop && { fontSize: scale(14) }]}>
+              Tap to log
+            </Text>
           </View>
           
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            style={styles.quickLogScroll}
-          >
+          <View style={styles.quickLogGrid}>
             {RECYCLABLE_TYPES.map((item) => (
               <TouchableOpacity
                 key={item.type}
                 style={[
-                  styles.quickLogItem,
-                  isDesktop && { width: scale(100), marginRight: scale(20) }
+                  styles.quickLogCard,
+                  isDesktop && { 
+                    padding: scale(16),
+                    borderRadius: scale(20),
+                  }
                 ]}
                 onPress={() => router.push({
                   pathname: '/(tabs)/(home)/log-item',
                   params: { type: item.type }
                 })}
               >
-                <View style={[
-                  styles.quickLogIcon,
-                  { 
-                    backgroundColor: item.color + '20',
-                    width: isDesktop ? scale(70) : 56,
-                    height: isDesktop ? scale(70) : 56,
-                    borderRadius: isDesktop ? scale(20) : 16,
-                  }
-                ]}>
+                <LinearGradient
+                  colors={[item.color + '20', item.color + '10']}
+                  style={[
+                    styles.quickLogIconLarge,
+                    { 
+                      width: isDesktop ? scale(80) : 64,
+                      height: isDesktop ? scale(80) : 64,
+                      borderRadius: isDesktop ? scale(24) : 20,
+                    }
+                  ]}
+                >
                   <Text style={[
-                    styles.quickLogEmoji,
-                    isDesktop && { fontSize: scale(32) }
+                    styles.quickLogEmojiLarge,
+                    isDesktop && { fontSize: scale(40) }
                   ]}>
                     {item.emoji}
                   </Text>
-                </View>
+                </LinearGradient>
                 <Text style={[
-                  styles.quickLogLabel,
-                  isDesktop && { fontSize: scale(16), marginTop: scale(8) }
+                  styles.quickLogLabelLarge,
+                  isDesktop && { fontSize: scale(18), marginTop: scale(12) }
                 ]}>
                   {item.label}
                 </Text>
+                <Text style={[
+                  styles.quickLogTap,
+                  isDesktop && { fontSize: scale(14) }
+                ]}>
+                  Tap to add →
+                </Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </View>
         </View>
 
         {/* Upcoming Collections - Only for collectors */}
@@ -569,14 +574,14 @@ export default function HomeScreen() {
             ) : (
               <View style={[
                 styles.emptyState,
-                isDesktop && { padding: scale(60), borderRadius: scale(20) }
+                isDesktop && { padding: scale(40), borderRadius: scale(20) }
               ]}>
                 <Recycle size={isDesktop ? 64 : 48} color={Colors.textLight} />
-                <Text style={[styles.emptyStateText, isDesktop && { fontSize: scale(18), marginTop: scale(20) }]}>
+                <Text style={[styles.emptyStateText, isDesktop && { fontSize: scale(18), marginTop: scale(16) }]}>
                   No items logged this week
                 </Text>
-                <Text style={[styles.emptyStateSubtext, isDesktop && { fontSize: scale(16), marginTop: scale(8) }]}>
-                  Tap the + button to log your recyclables
+                <Text style={[styles.emptyStateSubtext, isDesktop && { fontSize: scale(16) }]}>
+                  Choose a recyclable type above to get started
                 </Text>
               </View>
             )}
@@ -588,7 +593,7 @@ export default function HomeScreen() {
             isDesktop && styles.desktopGridItem
           ]}>
             <Text style={[styles.sectionTitle, isDesktop && { fontSize: scale(24), marginBottom: scale(24) }]}>
-              Recent Logs
+              Recent Activity
             </Text>
             
             {recentLogs.length > 0 ? (
@@ -627,6 +632,7 @@ export default function HomeScreen() {
                         {formatDate(item.created_at)} • {weight.toFixed(1)}kg
                       </Text>
                     </View>
+                    <ChevronRight size={20} color={Colors.textSecondary} />
                   </View>
                 );
               })
@@ -636,14 +642,17 @@ export default function HomeScreen() {
                 isDesktop && { padding: scale(40), borderRadius: scale(16) }
               ]}>
                 <Text style={[styles.emptyStateTextSmall, isDesktop && { fontSize: scale(16) }]}>
-                  No items logged yet
+                  No activity yet
+                </Text>
+                <Text style={[styles.emptyStateSubtextSmall, isDesktop && { fontSize: scale(14) }]}>
+                  Your recent logs will appear here
                 </Text>
               </View>
             )}
           </View>
         </View>
 
-        {/* Tablet impact section - Show environmental impact */}
+        {/* Tablet impact section */}
         {isTablet && !isDesktop && (
           <View style={styles.tabletImpactSection}>
             <LinearGradient
@@ -670,38 +679,7 @@ export default function HomeScreen() {
             </LinearGradient>
           </View>
         )}
-
-        <View style={{ height: isDesktop ? 120 : 100 }} />
       </ScrollView>
-
-      {/* FAB */}
-      <TouchableOpacity
-        style={[
-          styles.fab,
-          { 
-            bottom: insets.bottom + (isDesktop ? 40 : 20),
-            right: isDesktop ? 40 : 20,
-            width: isDesktop ? scale(70) : 60,
-            height: isDesktop ? scale(70) : 60,
-            borderRadius: isDesktop ? scale(35) : 30,
-          }
-        ]}
-        onPress={() => router.push('/(tabs)/(home)/log-item')}
-      >
-        <LinearGradient
-          colors={[Colors.primary, Colors.primaryDark]}
-          style={[
-            styles.fabGradient,
-            {
-              width: isDesktop ? scale(70) : 60,
-              height: isDesktop ? scale(70) : 60,
-              borderRadius: isDesktop ? scale(35) : 30,
-            }
-          ]}
-        >
-          <Plus size={isDesktop ? scale(32) : 28} color={Colors.white} strokeWidth={2.5} />
-        </LinearGradient>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -881,46 +859,67 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 32,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.text,
+  },
+  quickLogHint: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
   },
   seeAllText: {
     fontSize: 14,
     color: Colors.primary,
     fontWeight: '600',
   },
-  quickLogScroll: {
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
+  quickLogGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  quickLogItem: {
+  quickLogCard: {
+    width: '48%',
+    backgroundColor: Colors.white,
+    borderRadius: 24,
+    padding: 20,
     alignItems: 'center',
-    marginRight: 16,
-    width: 80,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  quickLogIcon: {
+  quickLogIconLarge: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  quickLogEmoji: {
-    fontSize: 28,
+  quickLogEmojiLarge: {
+    fontSize: 36,
   },
-  quickLogLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+  quickLogLabelLarge: {
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.text,
-    textAlign: 'center',
+    marginBottom: 4,
+  },
+  quickLogTap: {
+    fontSize: 12,
+    color: Colors.primary,
+    fontWeight: '500',
   },
   weekBadge: {
     flexDirection: 'row',
@@ -951,7 +950,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.white,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     gap: 12,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
@@ -984,9 +983,12 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
     marginTop: 2,
   },
+  deleteButton: {
+    padding: 8,
+  },
   emptyState: {
     alignItems: 'center',
-    padding: 40,
+    padding: 30,
     backgroundColor: Colors.white,
     borderRadius: 16,
   },
@@ -994,7 +996,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.text,
-    marginTop: 16,
+    marginTop: 12,
   },
   emptyStateSubtext: {
     fontSize: 14,
@@ -1006,18 +1008,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 30,
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 16,
   },
   emptyStateTextSmall: {
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  emptyStateSubtextSmall: {
+    fontSize: 13,
     color: Colors.textSecondary,
+    marginTop: 4,
+    textAlign: 'center',
   },
   recentItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.white,
-    padding: 14,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 16,
     marginBottom: 8,
     gap: 12,
     shadowColor: Colors.black,
@@ -1042,9 +1051,6 @@ const styles = StyleSheet.create({
   recentItemDate: {
     fontSize: 12,
     color: Colors.textSecondary,
-  },
-  deleteButton: {
-    padding: 8,
   },
   tabletImpactSection: {
     marginTop: 24,
@@ -1077,7 +1083,7 @@ const styles = StyleSheet.create({
   },
   collectionCard: {
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 8,
     shadowColor: Colors.black,
@@ -1120,17 +1126,5 @@ const styles = StyleSheet.create({
   collectionEstimate: {
     fontSize: 13,
     color: Colors.textSecondary,
-  },
-  fab: {
-    position: 'absolute',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  fabGradient: {
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });
