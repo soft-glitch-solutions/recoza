@@ -13,10 +13,12 @@ export interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   hasSeenOnboarding: boolean;
+  collectorApplication: any | null;
   signUp: (
     email: string,
     password: string,
     fullName: string,
+    phoneNumber: string,
     inviteCode?: string
   ) => Promise<{ success: boolean; error?: string; data?: any }>;
   signIn: (
@@ -26,6 +28,9 @@ export interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   setOnboardingComplete: (completed: boolean) => Promise<void>;
+  applyAsCollector: (motivation: string, area: string) => Promise<{ success: boolean; error?: string; data?: any }>;
+  checkCollectorStatus: () => Promise<{ status: string | null; application: any | null }>;
+  getCollectorApplication: () => Promise<void>;
 }
 
 // Create context
@@ -38,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  const [collectorApplication, setCollectorApplication] = useState<any | null>(null);
 
   // Derived state
   const isAuthenticated = !!user;
@@ -55,6 +61,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+    }
+  };
+
+  const getCollectorApplication = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('collector_applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setCollectorApplication(data);
+    } catch (error) {
+      console.error('Error fetching collector application:', error);
     }
   };
 
@@ -80,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (session?.user) {
         fetchProfile(session.user.id);
+        getCollectorApplication();
         // Check onboarding status from user metadata
         const onboardingCompleted = session.user.user_metadata?.onboarding_completed || false;
         setHasSeenOnboarding(onboardingCompleted);
@@ -99,10 +123,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (session?.user) {
         fetchProfile(session.user.id);
+        getCollectorApplication();
         const onboardingCompleted = session.user.user_metadata?.onboarding_completed || false;
         setHasSeenOnboarding(onboardingCompleted);
       } else {
         setProfile(null);
+        setCollectorApplication(null);
         checkLocalOnboardingStatus();
       }
       
@@ -116,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string,
     fullName: string,
+    phoneNumber: string,
     inviteCode?: string
   ) => {
     try {
@@ -124,6 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
         options: {
           data: {
+            full_name: fullName,
+            phone_number: phoneNumber,
             onboarding_completed: false
           }
         }
@@ -145,12 +174,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      // Generate a unique invite code for the new user
+      const newInviteCode = 'RCZ' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
       const { error: profileError } = await supabase
         .from('user_profiles')
         .insert({
           id: authData.user.id,
           full_name: fullName,
+          phone_number: phoneNumber,
           referred_by: referredBy,
+          invite_code: newInviteCode,
+          is_collector: false,
+          collector_approved: false,
         });
 
       if (profileError) throw profileError;
@@ -204,6 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setHasSeenOnboarding(false);
+    setCollectorApplication(null);
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('hasSeenOnboarding');
     }
@@ -212,6 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshProfile = async () => {
     if (user) {
       await fetchProfile(user.id);
+      await getCollectorApplication();
     }
   };
 
@@ -234,6 +272,115 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const applyAsCollector = async (motivation: string, area: string) => {
+    try {
+      if (!user) {
+        return { 
+          success: false, 
+          error: 'You must be logged in to apply' 
+        };
+      }
+
+      // Check if user already has an application
+      const { data: existingApp, error: checkError } = await supabase
+        .from('collector_applications')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      if (existingApp) {
+        if (existingApp.status === 'pending') {
+          return { 
+            success: false, 
+            error: 'You already have a pending application' 
+          };
+        } else if (existingApp.status === 'approved') {
+          return { 
+            success: false, 
+            error: 'Your collector application has already been approved' 
+          };
+        } else if (existingApp.status === 'rejected') {
+          return { 
+            success: false, 
+            error: 'Your previous application was rejected. Please contact support for more information.' 
+          };
+        }
+      }
+
+      // Insert new application
+      const { data, error } = await supabase
+        .from('collector_applications')
+        .insert({
+          user_id: user.id,
+          motivation,
+          area,
+          status: 'pending',
+          applied_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      setCollectorApplication(data);
+
+      return { 
+        success: true, 
+        data,
+        message: 'Application submitted successfully' 
+      };
+      
+    } catch (error) {
+      console.error('Error applying as collector:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to submit application' 
+      };
+    }
+  };
+
+  const checkCollectorStatus = async () => {
+    if (!user) {
+      return { status: null, application: null };
+    }
+
+    try {
+      // Get the latest application
+      const { data: application, error } = await supabase
+        .from('collector_applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      setCollectorApplication(application);
+
+      // Determine status
+      let status = 'none';
+      if (profile?.is_collector) {
+        status = 'approved';
+      } else if (profile?.collector_approved) {
+        status = 'approved';
+      } else if (application) {
+        status = application.status;
+      }
+
+      return { status, application };
+      
+    } catch (error) {
+      console.error('Error checking collector status:', error);
+      return { status: null, application: null };
+    }
+  };
+
   const value = {
     session,
     user,
@@ -242,11 +389,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     isAuthenticated,
     hasSeenOnboarding,
+    collectorApplication,
     signUp,
     signIn,
     signOut,
     refreshProfile,
     setOnboardingComplete,
+    applyAsCollector,
+    checkCollectorStatus,
+    getCollectorApplication,
   };
 
   return (

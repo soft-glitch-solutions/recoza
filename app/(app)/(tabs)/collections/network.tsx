@@ -1,6 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Modal } from 'react-native';
-import { useState } from 'react';
-
+import { useState, useEffect } from 'react';
 import { 
   Users, 
   UserPlus, 
@@ -20,7 +19,11 @@ import { HouseholdConnection } from '@/types';
 export default function NetworkScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { households, scheduleCollection } = useRecyclables();
+  
+  // Safely get households with default empty array
+  const recyclablesContext = useRecyclables() || {};
+  const { households = [], scheduleCollection = () => {} } = recyclablesContext;
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newHousehold, setNewHousehold] = useState({ name: '', email: '', phone: '' });
@@ -52,10 +55,17 @@ export default function NetworkScreen() {
     },
   ]);
 
-  const allHouseholds = [...mockHouseholds, ...households];
+  // Ensure both arrays are iterable
+  const allHouseholds = [
+    ...(Array.isArray(mockHouseholds) ? mockHouseholds : []),
+    ...(Array.isArray(households) ? households : [])
+  ];
 
-  const filteredHouseholds = allHouseholds.filter(h => 
+  const filteredHouseholds = allHouseholds.filter((h: HouseholdConnection) => 
+    h && 
+    h.householdName && 
     h.householdName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    h.householdEmail && 
     h.householdEmail.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -87,6 +97,11 @@ export default function NetworkScreen() {
       ]
     );
   };
+
+  // Calculate total items safely
+  const totalItemsLogged = allHouseholds.reduce((sum: number, h: HouseholdConnection) => {
+    return sum + (h?.totalItemsLogged || 0);
+  }, 0);
 
   if (!user?.isCollector) {
     return (
@@ -136,9 +151,7 @@ export default function NetworkScreen() {
             <Text style={styles.statLabel}>Households</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {allHouseholds.reduce((sum, h) => sum + h.totalItemsLogged, 0)}
-            </Text>
+            <Text style={styles.statValue}>{totalItemsLogged}</Text>
             <Text style={styles.statLabel}>Total Items</Text>
           </View>
         </View>
@@ -146,7 +159,7 @@ export default function NetworkScreen() {
         <Text style={styles.sectionTitle}>Connected Households</Text>
         
         {filteredHouseholds.length > 0 ? (
-          filteredHouseholds.map((household) => (
+          filteredHouseholds.map((household: HouseholdConnection) => (
             <TouchableOpacity 
               key={household.id} 
               style={styles.householdCard}
@@ -154,19 +167,19 @@ export default function NetworkScreen() {
             >
               <View style={styles.householdAvatar}>
                 <Text style={styles.householdAvatarText}>
-                  {household.householdName.charAt(0)}
+                  {household.householdName?.charAt(0) || '?'}
                 </Text>
               </View>
               <View style={styles.householdInfo}>
-                <Text style={styles.householdName}>{household.householdName}</Text>
+                <Text style={styles.householdName}>{household.householdName || 'Unknown'}</Text>
                 <View style={styles.householdMeta}>
                   <Mail size={12} color={Colors.textSecondary} />
-                  <Text style={styles.householdEmail}>{household.householdEmail}</Text>
+                  <Text style={styles.householdEmail}>{household.householdEmail || 'No email'}</Text>
                 </View>
                 <View style={styles.householdStats}>
                   <Package size={12} color={Colors.primary} />
                   <Text style={styles.householdItemsText}>
-                    {household.totalItemsLogged} items logged
+                    {household.totalItemsLogged || 0} items logged
                   </Text>
                 </View>
               </View>
@@ -263,7 +276,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: Colors.text,
   },
   addButton: {
@@ -310,7 +323,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 28,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: Colors.primary,
   },
   statLabel: {
@@ -320,7 +333,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: Colors.text,
     marginBottom: 16,
   },
@@ -343,7 +356,7 @@ const styles = StyleSheet.create({
   },
   householdAvatarText: {
     fontSize: 20,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: Colors.white,
   },
   householdInfo: {
@@ -351,7 +364,7 @@ const styles = StyleSheet.create({
   },
   householdName: {
     fontSize: 16,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: Colors.text,
   },
   householdMeta: {
@@ -373,7 +386,7 @@ const styles = StyleSheet.create({
   householdItemsText: {
     fontSize: 12,
     color: Colors.primary,
-    fontWeight: '500' as const,
+    fontWeight: '500',
   },
   emptyState: {
     alignItems: 'center',
@@ -383,7 +396,7 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: Colors.text,
     marginTop: 16,
   },
@@ -401,7 +414,7 @@ const styles = StyleSheet.create({
   },
   notCollectorTitle: {
     fontSize: 20,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: Colors.text,
     marginTop: 16,
   },
@@ -430,7 +443,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: Colors.text,
   },
   inputGroup: {
@@ -438,7 +451,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: Colors.text,
     marginBottom: 8,
   },
@@ -461,7 +474,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: 16,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: Colors.white,
   },
 });
