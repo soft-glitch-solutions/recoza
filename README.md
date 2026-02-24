@@ -1,3 +1,8 @@
+
+<img width="2000" height="2000" alt="REC (1)" src="https://github.com/user-attachments/assets/f82792f4-6569-41d4-9b6f-7d6c4da1ef4c" />
+
+
+
 # ♻️ Recoza
 
 **Recoza** is an **open-source South African green-tech mobile application** that helps unemployed youth earn income by organising community recycling through trusted networks of friends, family, and neighbours.
