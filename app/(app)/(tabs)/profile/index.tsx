@@ -18,13 +18,16 @@ import {
   Globe,
   Star,
   Target,
-  TrendingUp
+  TrendingUp,
+  Moon,
+  Sun,
+  Smartphone
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 
@@ -32,8 +35,8 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, profile, collectorApplication, signOut, applyAsCollector } = useAuth();
+  const { colors, themeMode, setThemeMode, isDark } = useTheme();
   
-  // Safe destructuring with defaults
   const { 
     collectorStats = { totalEarnings: 0, weeklyEarnings: 0, totalCollections: 0, householdsCount: 0, totalWeight: 0 }, 
     recyclableItems: items = [] 
@@ -66,37 +69,6 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleApplyCollector = () => {
-    Alert.alert(
-      'Become a Collector',
-      'As a collector, you can:\n\n• Build a network of households\n• Plan weekly collections\n• Earn money from recycling\n• Make a difference in your community\n\nWould you like to apply?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Apply Now', 
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              await applyAsCollector('Keen to help my community recycle', 'My Local Area');
-              Alert.alert(
-                'Application Submitted', 
-                'Your collector application is being reviewed. We\'ll notify you within 24-48 hours.'
-              );
-            } catch (error) {
-              Alert.alert('Error', 'Failed to submit application');
-            } finally {
-              setIsLoading(false);
-            }
-          }
-        },
-      ]
-    );
-  };
-
-  const handleApproveDemo = async () => {
-    Alert.alert('Demo', 'Admin backend connection needed to approve collectors.');
-  };
-
   const handleCopyInviteCode = async () => {
     if (profile?.invite_code) {
       await Clipboard.setStringAsync(profile.invite_code);
@@ -116,19 +88,16 @@ export default function ProfileScreen() {
     }
   };
 
-  const getCollectorStatusBadge = () => {
+  const statusBadge = (() => {
     if (profile?.is_collector || profile?.collector_approved) {
-      return { icon: <CheckCircle size={14} color="#10B981" />, text: 'Active Collector', color: '#10B981', bg: '#D1FAE5' };
+      return { icon: <CheckCircle size={14} color="#10B981" />, text: 'Active Collector', color: '#10B981', bg: isDark ? '#064E3B' : '#D1FAE5' };
     }
     if (collectorApplication?.status === 'pending') {
-      return { icon: <Clock size={14} color="#F59E0B" />, text: 'Pending Review', color: '#F59E0B', bg: '#FEF3C7' };
+      return { icon: <Clock size={14} color="#F59E0B" />, text: 'Pending Review', color: '#F59E0B', bg: isDark ? '#78350F' : '#FEF3C7' };
     }
     return null;
-  };
-
-  const statusBadge = getCollectorStatusBadge();
+  })();
   
-  // Safe calculations
   const totalItemsLogged = items?.length || 0;
   const totalWeight = items?.reduce((sum: number, item: any) => {
     if (!item) return sum;
@@ -141,28 +110,25 @@ export default function ProfileScreen() {
       title: 'Account',
       items: [
         {
-          icon: <User size={20} color={Colors.primary} />,
+          icon: <User size={20} color={colors.primary} />,
           label: 'Edit Profile',
           onPress: () => router.push('/profile/edit'),
-          color: Colors.primary,
-          bg: '#E0F2FE',
+          color: colors.primary,
+          bg: isDark ? '#1E3A8A' : '#E0F2FE',
         },
         {
-          icon: <Mail size={20} color={Colors.primary} />,
+          icon: <Mail size={20} color={colors.primary} />,
           label: 'Email',
           value: user?.email,
-          onPress: () => Alert.alert('Info', 'Your email is used for account recovery and notifications'),
-          color: Colors.primary,
-          bg: '#E0F2FE',
-        },
-        {
-          icon: <Shield size={20} color={Colors.primary} />,
-          label: 'Privacy & Security',
-          onPress: () => router.push('/profile/privacy'),
-          color: Colors.primary,
-          bg: '#E0F2FE',
+          onPress: () => Alert.alert('Info', 'Your email is used for recovery'),
+          color: colors.primary,
+          bg: isDark ? '#1E3A8A' : '#E0F2FE',
         },
       ],
+    },
+    {
+      title: 'Appearance',
+      isTheme: true,
     },
     {
       title: 'Preferences',
@@ -170,62 +136,29 @@ export default function ProfileScreen() {
         {
           icon: <Bell size={20} color="#F59E0B" />,
           label: 'Notifications',
-          value: 'Manage alerts',
           onPress: () => router.push('/profile/notifications'),
           color: '#F59E0B',
-          bg: '#FEF3C7',
+          bg: isDark ? '#78350F' : '#FEF3C7',
         },
         {
           icon: <Globe size={20} color="#8B5CF6" />,
           label: 'Language',
           value: 'English',
-          onPress: () => Alert.alert('Coming Soon', 'More languages coming soon'),
+          onPress: () => Alert.alert('Coming Soon', 'More languages soon'),
           color: '#8B5CF6',
-          bg: '#EDE9FE',
-        },
-      ],
-    },
-    {
-      title: 'Support',
-      items: [
-        {
-          icon: <HelpCircle size={20} color="#3B82F6" />,
-          label: 'Help & Support',
-          value: 'FAQs, contact us',
-          onPress: () => router.push('/profile/help'),
-          color: '#3B82F6',
-          bg: '#DBEAFE',
-        },
-        {
-          icon: <Info size={20} color="#22C55E" />,
-          label: 'About Recoza',
-          value: 'Version 1.0.0',
-          onPress: () => Alert.alert(
-            'About Recoza',
-            'Recoza is a South African green-tech app helping unemployed youth earn income through community recycling.\n\n🌍 Version: 1.0.0\n\nCopyright © 2024 Recoza'
-          ),
-          color: '#22C55E',
-          bg: '#DCFCE7',
+          bg: isDark ? '#4C1D95' : '#EDE9FE',
         },
       ],
     },
   ];
 
   return (
-    <View style={styles.container}>
-      {/* Status Bar - Light content for gradient header */}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
-      {/* Header with Gradient - Using insets for proper padding */}
       <LinearGradient
-        colors={['#059669', '#047857', '#065F46']}
-        style={[
-          styles.header, 
-          { 
-            paddingTop: insets.top + 16, // Safe area + extra padding
-            paddingBottom: 32,
-          }
-        ]}
+        colors={colors.headerGradient}
+        style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 32 }]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
@@ -239,12 +172,9 @@ export default function ProfileScreen() {
             </Text>
           </LinearGradient>
           {statusBadge && (
-            <LinearGradient
-              colors={[statusBadge.color, statusBadge.color]}
-              style={styles.collectorBadge}
-            >
+            <View style={[styles.collectorBadge, { backgroundColor: statusBadge.color }]}>
               {statusBadge.icon}
-            </LinearGradient>
+            </View>
           )}
         </View>
         
@@ -252,203 +182,103 @@ export default function ProfileScreen() {
         <Text style={styles.userEmail}>{user?.email}</Text>
         
         {statusBadge && (
-          <LinearGradient
-            colors={[statusBadge.bg, statusBadge.bg]}
-            style={styles.statusPill}
-          >
+          <View style={[styles.statusPill, { backgroundColor: statusBadge.bg }]}>
             {statusBadge.icon}
             <Text style={[styles.statusText, { color: statusBadge.color }]}>
               {statusBadge.text}
             </Text>
-          </LinearGradient>
+          </View>
         )}
       </LinearGradient>
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.contentContainer, 
-          { 
-            paddingBottom: insets.bottom + 100, // Safe area + extra padding for bottom
-          }
-        ]}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Stats Cards - With negative margin to overlap header */}
         <View style={styles.statsGrid}>
-          <LinearGradient
-            colors={['#FFFFFF', '#F9FAFB']}
-            style={styles.statsCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={[styles.statIcon, { backgroundColor: '#E0F2FE' }]}>
-              <Target size={20} color={Colors.primary} />
+          <View style={[styles.statsCard, { backgroundColor: colors.surface }]}>
+            <View style={[styles.statIcon, { backgroundColor: isDark ? '#1E3A8A' : '#E0F2FE' }]}>
+              <Target size={20} color={colors.primary} />
             </View>
-            <Text style={styles.statValue}>{totalItemsLogged}</Text>
-            <Text style={styles.statLabel}>Items Logged</Text>
-          </LinearGradient>
+            <Text style={[styles.statValue, { color: colors.text }]}>{totalItemsLogged}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Items Logged</Text>
+          </View>
 
-          <LinearGradient
-            colors={['#FFFFFF', '#F9FAFB']}
-            style={styles.statsCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={[styles.statIcon, { backgroundColor: '#D1FAE5' }]}>
+          <View style={[styles.statsCard, { backgroundColor: colors.surface }]}>
+            <View style={[styles.statIcon, { backgroundColor: isDark ? '#064E3B' : '#D1FAE5' }]}>
               <TrendingUp size={20} color="#10B981" />
             </View>
-            <Text style={styles.statValue}>{totalWeight.toFixed(1)}</Text>
-            <Text style={styles.statLabel}>kg Recycled</Text>
-          </LinearGradient>
-
-          {(profile?.is_collector || profile?.collector_approved) && (
-            <LinearGradient
-              colors={['#FFFFFF', '#F9FAFB']}
-              style={styles.statsCard}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={[styles.statIcon, { backgroundColor: '#FEF3C7' }]}>
-                <Star size={20} color="#F59E0B" />
-              </View>
-              <Text style={styles.statValue}>R{collectorStats?.totalEarnings?.toFixed(0) || 0}</Text>
-              <Text style={styles.statLabel}>Total Earned</Text>
-            </LinearGradient>
-          )}
+            <Text style={[styles.statValue, { color: colors.text }]}>{totalWeight.toFixed(1)}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>kg Recycled</Text>
+          </View>
         </View>
 
-        {/* Invite Code Section for Collectors */}
-        {(profile?.is_collector || profile?.collector_approved) && profile?.invite_code && (
-          <LinearGradient
-            colors={['#FFFFFF', '#F9FAFB']}
-            style={styles.inviteCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Text style={styles.sectionTitle}>Your Invite Code</Text>
-            <View style={styles.inviteCodeContainer}>
-              <LinearGradient
-                colors={['#E0F2FE', '#BAE6FD']}
-                style={styles.inviteCodeBox}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.inviteCode}>{profile?.invite_code}</Text>
-              </LinearGradient>
-              <TouchableOpacity onPress={handleCopyInviteCode} style={styles.copyButton}>
-                <Copy size={20} color={Colors.primary} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.inviteHint}>
-              Share this code with households to add them to your network
-            </Text>
-            <TouchableOpacity style={styles.shareButton} onPress={handleShareInvite}>
-              <LinearGradient
-                colors={[Colors.primary, '#059669']}
-                style={styles.shareButtonGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Share2 size={18} color={Colors.white} />
-                <Text style={styles.shareButtonText}>Share Invite Link</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </LinearGradient>
-        )}
-
-        {/* Collector Application Section */}
-        {!(profile?.is_collector || profile?.collector_approved) && (
-          <LinearGradient
-            colors={['#FFFFFF', '#F9FAFB']}
-            style={styles.menuCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            {!collectorApplication || collectorApplication?.status === 'none' ? (
-              <TouchableOpacity style={styles.collectorCard} onPress={handleApplyCollector}>
-                <LinearGradient
-                  colors={['#F59E0B20', '#F59E0B10']}
-                  style={styles.collectorIconContainer}
-                >
-                  <Users size={24} color="#F59E0B" />
-                </LinearGradient>
-                <View style={styles.collectorContent}>
-                  <Text style={styles.collectorTitle}>Become a Collector</Text>
-                  <Text style={styles.collectorDescription}>
-                    Earn money by collecting recyclables from households
-                  </Text>
-                </View>
-                <ChevronRight size={20} color={Colors.textLight} />
-              </TouchableOpacity>
-            ) : collectorApplication?.status === 'pending' ? (
-              <View>
-                <View style={styles.collectorCard}>
-                  <LinearGradient
-                    colors={['#F59E0B20', '#F59E0B10']}
-                    style={styles.collectorIconContainer}
-                  >
-                    <Clock size={24} color="#F59E0B" />
-                  </LinearGradient>
-                  <View style={styles.collectorContent}>
-                    <Text style={styles.collectorTitle}>Application Pending</Text>
-                    <Text style={styles.collectorDescription}>
-                      We are reviewing your application
-                    </Text>
-                  </View>
-                </View>
-                <TouchableOpacity style={styles.demoApproveButton} onPress={handleApproveDemo}>
-                  <Text style={styles.demoApproveText}>Demo: Approve Now</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-          </LinearGradient>
-        )}
-
-        {/* Menu Sections */}
         {menuSections.map((section, index) => (
           <View key={index} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <LinearGradient
-              colors={['#FFFFFF', '#F9FAFB']}
-              style={styles.menuCard}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              {section.items.map((item, itemIndex) => (
-                <TouchableOpacity
-                  key={itemIndex}
-                  style={[
-                    styles.menuItem,
-                    itemIndex === section.items.length - 1 && styles.menuItemLast
-                  ]}
-                  onPress={item.onPress}
-                >
-                  <LinearGradient
-                    colors={[item.bg, item.bg]}
-                    style={[styles.menuIconContainer, { backgroundColor: item.bg }]}
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{section.title}</Text>
+            
+            {section.isTheme ? (
+              <View style={[styles.themeCard, { backgroundColor: colors.surface }]}>
+                {[
+                  { id: 'light', icon: Sun, label: 'Light' },
+                  { id: 'dark', icon: Moon, label: 'Dark' },
+                  { id: 'system', icon: Smartphone, label: 'System' }
+                ].map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      styles.themeOption,
+                      themeMode === item.id && { backgroundColor: isDark ? '#2D2D2D' : '#F3F4F6' }
+                    ]}
+                    onPress={() => setThemeMode(item.id as any)}
                   >
-                    {item.icon}
-                  </LinearGradient>
-                  <View style={styles.menuContent}>
-                    <Text style={styles.menuLabel}>{item.label}</Text>
-                    {item.value && <Text style={styles.menuValue}>{item.value}</Text>}
-                  </View>
-                  <ChevronRight size={20} color={Colors.textLight} />
-                </TouchableOpacity>
-              ))}
-            </LinearGradient>
+                    <item.icon 
+                      size={20} 
+                      color={themeMode === item.id ? colors.primary : colors.textSecondary} 
+                    />
+                    <Text style={[
+                      styles.themeLabel, 
+                      { color: themeMode === item.id ? colors.primary : colors.textSecondary }
+                    ]}>
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={[styles.menuCard, { backgroundColor: colors.surface }]}>
+                {section.items?.map((item, itemIndex) => (
+                  <TouchableOpacity
+                    key={itemIndex}
+                    style={[
+                      styles.menuItem,
+                      itemIndex === section.items.length - 1 && styles.menuItemLast,
+                      { borderBottomColor: colors.borderLight }
+                    ]}
+                    onPress={item.onPress}
+                  >
+                    <View style={[styles.menuIconContainer, { backgroundColor: item.bg }]}>
+                      {item.icon}
+                    </View>
+                    <View style={styles.menuContent}>
+                      <Text style={[styles.menuLabel, { color: colors.text }]}>{item.label}</Text>
+                      {item.value && <Text style={[styles.menuValue, { color: colors.textSecondary }]}>{item.value}</Text>}
+                    </View>
+                    <ChevronRight size={20} color={colors.textLight} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
         ))}
 
-        {/* Logout Button */}
         <TouchableOpacity 
           style={styles.logoutButton} 
           onPress={handleLogout}
-          disabled={isLoading}
         >
           <LinearGradient
-            colors={['#FEE2E2', '#FEF2F2']}
+            colors={isDark ? ['#7F1D1D', '#450A0A'] : ['#FEE2E2', '#FEF2F2']}
             style={styles.logoutGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -458,300 +288,46 @@ export default function ProfileScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
-        <Text style={styles.versionText}>Recoza v1.0.0 • Making South Africa Greener</Text>
+        <Text style={[styles.versionText, { color: colors.textLight }]}>
+          Recoza v1.0.0 • Making South Africa Greener
+        </Text>
       </ScrollView>
-
-      {/* Bottom safe area spacer for devices with home indicator */}
-      {Platform.OS === 'ios' && <View style={{ height: insets.bottom }} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-  },
-  header: {
-    alignItems: 'center',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: 12,
-  },
-  avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  collectorBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.white,
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 4,
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 12,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 16,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: -20,
-    marginBottom: 24,
-  },
-  statsCard: {
-    flex: 1,
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 12,
-    marginLeft: 4,
-  },
-  inviteCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  inviteCodeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  inviteCodeBox: {
-    flex: 1,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  inviteCode: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.primary,
-    letterSpacing: 3,
-  },
-  copyButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    backgroundColor: Colors.surfaceSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  inviteHint: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  shareButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  shareButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-  },
-  shareButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.white,
-  },
-  menuCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  menuItemLast: {
-    borderBottomWidth: 0,
-  },
-  menuIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  menuContent: {
-    flex: 1,
-  },
-  menuLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  menuValue: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  collectorCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-  },
-  collectorIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  collectorContent: {
-    flex: 1,
-  },
-  collectorTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  collectorDescription: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  demoApproveButton: {
-    padding: 16,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  demoApproveText: {
-    fontSize: 14,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  logoutButton: {
-    marginTop: 8,
-    marginBottom: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  logoutGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 18,
-  },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#EF4444',
-  },
-  versionText: {
-    fontSize: 12,
-    color: Colors.textLight,
-    textAlign: 'center',
-  },
+  container: { flex: 1 },
+  header: { alignItems: 'center', borderBottomLeftRadius: 32, borderBottomRightRadius: 32, elevation: 8 },
+  avatarContainer: { position: 'relative', marginBottom: 12 },
+  avatar: { width: 88, height: 88, borderRadius: 44, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.3)' },
+  avatarText: { fontSize: 36, fontWeight: '700', color: '#fff' },
+  collectorBadge: { position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#fff' },
+  userName: { fontSize: 24, fontWeight: '700', color: '#fff' },
+  userEmail: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginTop: 12 },
+  statusText: { fontSize: 12, fontWeight: '600' },
+  scrollView: { flex: 1 },
+  contentContainer: { padding: 16 },
+  statsGrid: { flexDirection: 'row', gap: 12, marginTop: -20, marginBottom: 24 },
+  statsCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', elevation: 4 },
+  statIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  statValue: { fontSize: 20, fontWeight: '700' },
+  statLabel: { fontSize: 11, marginTop: 4 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 12, marginLeft: 4 },
+  menuCard: { borderRadius: 20, overflow: 'hidden', elevation: 2 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1 },
+  menuItemLast: { borderBottomWidth: 0 },
+  menuIconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  menuContent: { flex: 1 },
+  menuLabel: { fontSize: 15, fontWeight: '600' },
+  menuValue: { fontSize: 13, marginTop: 2 },
+  themeCard: { flexDirection: 'row', borderRadius: 20, padding: 8, gap: 8, elevation: 2 },
+  themeOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12 },
+  themeLabel: { fontSize: 14, fontWeight: '600' },
+  logoutButton: { marginTop: 8, marginBottom: 16, borderRadius: 16, overflow: 'hidden' },
+  logoutGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 18 },
+  logoutText: { fontSize: 16, fontWeight: '600', color: '#EF4444' },
+  versionText: { fontSize: 12, textAlign: 'center' },
 });

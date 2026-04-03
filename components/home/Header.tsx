@@ -3,8 +3,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Recycle } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface HeaderProps {
   isDesktop?: boolean;
@@ -21,7 +21,8 @@ export const Header: React.FC<HeaderProps> = ({
   layout = { paddingHorizontal: 20, contentMaxWidth: '100%' }
 }) => {
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { profile } = useAuth();
+  const { colors } = useTheme();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -32,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <LinearGradient
-      colors={[Colors.primary, Colors.primaryDark]}
+      colors={colors.headerGradient}
       style={[
         styles.header,
         { 
@@ -55,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
             {getGreeting()}
           </Text>
           <Text style={[styles.userName, isDesktop && { fontSize: scale(32) }]}>
-            {user?.full_name?.split(' ')[0] || 'Recycler'}
+            {profile?.full_name?.split(' ')[0] || 'Recycler'}
           </Text>
         </View>
         <View style={styles.headerRight}>
@@ -67,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
               borderRadius: scale(26),
             }
           ]}>
-            <Recycle size={isDesktop ? scale(28) : 24} color={Colors.white} />
+            <Recycle size={isDesktop ? scale(28) : 24} color="#fff" />
           </View>
         </View>
       </View>
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 24,
     fontWeight: '700',
-    color: Colors.white,
+    color: '#fff',
   },
   logoSmall: {
     width: 44,
@@ -110,4 +111,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-});
+});

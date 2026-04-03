@@ -1,15 +1,16 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
-import Colors from '@/constants/colors';
+import { View, Animated, ViewStyle, DimensionValue } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SkeletonProps {
-  width?: number | string;
-  height?: number | string;
+  width?: DimensionValue;
+  height?: DimensionValue;
   borderRadius?: number;
   style?: ViewStyle | ViewStyle[];
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({ width, height, borderRadius = 8, style }) => {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -33,10 +34,10 @@ export const Skeleton: React.FC<SkeletonProps> = ({ width, height, borderRadius 
     <Animated.View
       style={[
         {
-          width,
-          height,
+          width: width as any,
+          height: height as any,
           borderRadius,
-          backgroundColor: '#E5E7EB', // Colors.border approximation
+          backgroundColor: colors.borderLight,
           opacity: opacity,
         },
         style,
@@ -45,14 +46,19 @@ export const Skeleton: React.FC<SkeletonProps> = ({ width, height, borderRadius 
   );
 };
 
-export const SkeletonBlock = ({ height = 100, style }: { height?: number | string, style?: ViewStyle }) => (
-  <Skeleton height={height} width="100%" borderRadius={16} style={[{ marginBottom: 16 }, style]} />
+export const SkeletonBlock = ({ height = 100, style }: { height?: DimensionValue, style?: ViewStyle }) => (
+  <Skeleton height={height} width="100%" borderRadius={16} style={[styles.mb16, style]} />
 );
 
-export const SkeletonList = ({ count = 3, height = 60 }: { count?: number, height?: number | string }) => (
+export const SkeletonList = ({ count = 3, height = 60 }: { count?: number, height?: DimensionValue }) => (
   <View>
     {Array.from({ length: count }).map((_, i) => (
-      <Skeleton key={i} height={height} width="100%" borderRadius={12} style={{ marginBottom: 12 }} />
+      <Skeleton key={i} height={height} width="100%" borderRadius={12} style={styles.mb12} />
     ))}
   </View>
 );
+
+const styles = {
+  mb16: { marginBottom: 16 } as ViewStyle,
+  mb12: { marginBottom: 12 } as ViewStyle,
+};

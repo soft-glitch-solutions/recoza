@@ -12,20 +12,28 @@ export interface User {
 
 export interface RecyclableItem {
   id: string;
-  userId: string;
-  type: RecyclableType;
+  householdId?: string;
+  recyclableTypeId: string;
+  type?: RecyclableType; // Optional joined data
   quantity: number;
-  unit: 'kg' | 'items';
+  estimatedWeightKg: number;
+  notes?: string;
   loggedAt: string;
   collected: boolean;
-  collectedAt?: string;
-  collectorId?: string;
+  collectionId?: string;
 }
 
-export type RecyclableType = 'plastic' | 'paper' | 'glass' | 'metal' | 'cardboard';
+export interface RecyclableType {
+  id: string;
+  name: string;
+  description?: string;
+  estimatedPricePerKg: number;
+  iconName: string;
+  active: boolean;
+}
 
 export interface RecyclablePrice {
-  type: RecyclableType;
+  type: string; // Type name
   pricePerKg: number;
   label: string;
   icon: string;

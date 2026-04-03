@@ -1,337 +1,120 @@
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Dimensions, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useCallback, useEffect } from 'react';
-import Colors from '@/constants/colors';
+import { useState, useCallback } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Header } from '@/components/home/Header';
 import { StatsCard } from '@/components/home/StatsCard';
 import { QuickLogSection } from '@/components/home/QuickLogSection';
 import { UpcomingCollections } from '@/components/home/UpcomingCollections';
 import { RecentActivity } from '@/components/home/RecentActivity';
-import { TabletImpactSection } from '@/components/home/TabletImpactSection';
 import { SkeletonBlock, SkeletonList } from '@/components/Skeleton';
+import { ChevronRight } from 'lucide-react-native';
 
-const { width, height } = Dimensions.get('window');
-const isTablet = width >= 768;
-const isDesktop = width >= 1024;
-
-// Responsive scaling
-const scale = (size: number) => {
-  if (isDesktop) {
-    return size * (width / 1920) * 1.2;
-  }
-  if (isTablet) {
-    return size * (width / 768) * 1.1;
-  }
-  return size;
-};
-
-// Recyclable types with icons
-const RECYCLABLE_TYPES = [
-  { type: 'plastic', label: 'Plastic', emoji: '🫙', color: '#2D9B5E', bgColor: '#2D9B5E20' },
-  { type: 'paper', label: 'Paper', emoji: '📰', color: '#3B82F6', bgColor: '#3B82F620' },
-  { type: 'glass', label: 'Glass', emoji: '🍾', color: '#F59E0B', bgColor: '#F59E0B20' },
-  { type: 'metal', label: 'Metal', emoji: '🥫', color: '#EF4444', bgColor: '#EF444420' },
-  { type: 'cardboard', label: 'Cardboard', emoji: '📦', color: '#8B5CF6', bgColor: '#8B5CF620' },
-];
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user } = useAuth();
+  const { profile } = useAuth();
+  const { colors } = useTheme();
   const { 
-    items = [], 
+    recyclableItems = [], 
     collections = [], 
     loading,
-    fetchRecyclableItems,
-    fetchCollections,
-    deleteRecyclableItem 
+    refreshData,
   } = useRecyclables();
   
   const [refreshing, setRefreshing] = useState(false);
-  const [weeklyStats, setWeeklyStats] = useState({
-    totalWeight: 0,
-    itemCount: 0,
-  });
-  const [impactStats, setImpactStats] = useState({
-    co2Saved: 0,
-    treesSaved: 0,
-    waterSaved: 0,
-  });
-  const [weeklyItems, setWeeklyItems] = useState<any[]>([]);
-  const [recentLogs, setRecentLogs] = useState<any[]>([]);
-  const [upcomingCollections, setUpcomingCollections] = useState<any[]>([]);
 
-  // Check if user is a collector
-  const isCollector = user?.is_collector === true;
-
-  // Calculate statistics from real data
-  useEffect(() => {
-    if (items && items.length > 0) {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      
-      const weekly = items.filter(item => new Date(item.created_at) >= weekAgo);
-      setWeeklyItems(weekly);
-      
-      const stats = weekly.reduce((acc, item) => {
-        const weight = item.unit === 'kg' ? item.quantity : item.quantity * 0.05;
-        return {
-          totalWeight: acc.totalWeight + weight,
-          itemCount: acc.itemCount + 1,
-        };
-      }, { totalWeight: 0, itemCount: 0 });
-      
-      setWeeklyStats(stats);
-      
-      setImpactStats({
-        co2Saved: stats.totalWeight * 2.5,
-        treesSaved: (stats.totalWeight * 2.5) / 21,
-        waterSaved: stats.totalWeight * 17,
-      });
-      
-      setRecentLogs(items.slice(0, 5));
-    }
-  }, [items]);
-
-  // Get upcoming collections
-  useEffect(() => {
-    if (isCollector && collections && collections.length > 0) {
-      const upcoming = collections
-        .filter(c => c.status === 'scheduled')
-        .sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime())
-        .slice(0, 3);
-      
-      setUpcomingCollections(upcoming);
-    }
-  }, [collections, isCollector]);
+  const isCollector = profile?.is_collector || profile?.collector_approved || false;
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    try {
-      await Promise.all([
-        fetchRecyclableItems(),
-        fetchCollections(),
-      ]);
-    } catch (error) {
-      console.error('Error refreshing:', error);
-    } finally {
-      setRefreshing(false);
-    }
-  }, [fetchRecyclableItems, fetchCollections]);
-
-  const handleDeleteItem = (itemId: string) => {
-    Alert.alert(
-      'Delete Item',
-      'Are you sure you want to delete this item?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            const result = await deleteRecyclableItem(itemId);
-            if (result.success) {
-              Alert.alert('Success', 'Item deleted successfully');
-            } else {
-              Alert.alert('Error', result.error || 'Failed to delete item');
-            }
-          }
-        },
-      ]
-    );
-  };
-
-  const getIcon = (type: string) => {
-    const item = RECYCLABLE_TYPES.find(t => t.type === type);
-    return item?.emoji || '♻️';
-  };
-
-  const getLabel = (type: string) => {
-    const item = RECYCLABLE_TYPES.find(t => t.type === type);
-    return item?.label || type;
-  };
-
-  const getColor = (type: string) => {
-    const item = RECYCLABLE_TYPES.find(t => t.type === type);
-    return item?.color || Colors.primary;
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
-  };
-
-  // Desktop layout configuration
-  const getLayoutConfig = () => {
-    if (isDesktop) {
-      return {
-        contentMaxWidth: 1400,
-        paddingHorizontal: 40,
-        gridColumns: 3,
-        showImpactSection: true,
-        headerHeight: scale(80),
-      };
-    }
-    if (isTablet) {
-      return {
-        contentMaxWidth: 900,
-        paddingHorizontal: 32,
-        gridColumns: 2,
-        showImpactSection: true,
-        headerHeight: scale(70),
-      };
-    }
-    return {
-      contentMaxWidth: '100%' as const,
-      paddingHorizontal: 20,
-      gridColumns: 1,
-      showImpactSection: false,
-      headerHeight: scale(60),
-    };
-  };
-
-  const layout = getLayoutConfig();
+    await refreshData();
+    setRefreshing(false);
+  }, [refreshData]);
 
   return (
-    <View style={styles.container}>
-      <Header isDesktop={isDesktop} scale={scale} layout={layout} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Header />
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          {
-            paddingHorizontal: layout.paddingHorizontal,
-            maxWidth: layout.contentMaxWidth,
-            alignSelf: 'center',
-            width: '100%',
-            paddingBottom: 20,
-          }
+          { paddingBottom: insets.bottom + 100 }
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
             onRefresh={onRefresh} 
-            tintColor={Colors.primary} 
-            colors={[Colors.primary]}
+            tintColor={colors.primary} 
           />
         }
       >
-        {isDesktop ? (
-          // Desktop 2-Column Layout
-          <View style={styles.desktopGrid}>
-            <View style={{ flex: 1, gap: 24 }}>
-              <QuickLogSection isDesktop={isDesktop} scale={scale} />
-              
-              <View style={{ width: '100%' }}>
-                <Text style={{ marginBottom: 16, fontSize: scale(24), fontWeight: '700', color: Colors.text }}>
-                  Your Impact Overview
-                </Text>
-                {loading ? (
-                  <SkeletonBlock height={160} />
-                ) : (
-                  <StatsCard 
-                    weeklyStats={weeklyStats}
-                    impactStats={impactStats}
-                    isCollector={isCollector}
-                    isDesktop={isDesktop}
-                    scale={scale}
-                    layout={{ paddingHorizontal: 0, contentMaxWidth: '100%' }}
-                  />
-                )}
-              </View>
-            </View>
+        <View style={styles.content}>
+          {/* 1. Quick Log Hero */}
+          <QuickLogSection />
 
-            <View style={{ flex: 1, gap: 24 }}>
-              {isCollector && (
+          {/* 2. Unified Stats (The 3 Pills) */}
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Personal Impact</Text>
+          </View>
+          {loading ? (
+            <SkeletonBlock height={100} />
+          ) : (
+            <StatsCard 
+              itemsCount={recyclableItems.length}
+              totalWeight={recyclableItems.reduce((acc, item) => acc + (item.estimatedWeightKg || 0), 0)}
+              isCollector={isCollector}
+            />
+          )}
+
+          {/* 3. Collector Tasks (If applicable) */}
+          {isCollector && (
+            <>
+              <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Pending Tasks</Text>
+                <TouchableOpacity onPress={() => router.push('/collections' as any)}>
+                  <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
+                </TouchableOpacity>
+              </View>
+              {loading ? (
+                <SkeletonList count={2} height={80} />
+              ) : (
                 <UpcomingCollections 
-                  collections={upcomingCollections}
-                  isDesktop={isDesktop}
-                  scale={scale}
+                  collections={collections.filter(c => c.status === 'scheduled').slice(0, 3)}
                 />
               )}
-              
-              {loading ? (
-                <View style={{ marginTop: 0 }}>
-                  <Text style={{ fontSize: scale(20), fontWeight: '700', color: Colors.text, marginBottom: 16 }}>Recent Activity</Text>
-                  <SkeletonList count={4} height={70} />
-                </View>
-              ) : (
-                <RecentActivity 
-                  items={items}
-                  recentLogs={recentLogs}
-                  getIcon={getIcon}
-                  getLabel={getLabel}
-                  getColor={getColor}
-                  formatDate={formatDate}
-                  isDesktop={isDesktop}
-                  scale={scale}
-                />
-              )}
-            </View>
+            </>
+          )}
+
+          {/* 4. Recent Activity */}
+          <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Activity</Text>
           </View>
-        ) : (
-          // Mobile Stacked Layout
-          <View style={{ gap: 24 }}>
-            <QuickLogSection isDesktop={false} scale={scale} />
+          {loading ? (
+            <SkeletonList count={3} height={70} />
+          ) : (
+            <RecentActivity 
+              items={recyclableItems.slice(0, 5)}
+            />
+          )}
 
-            {isCollector && (
-              <UpcomingCollections 
-                collections={upcomingCollections}
-                isDesktop={false}
-                scale={scale}
-              />
-            )}
-
-            {loading ? (
-              <View style={{ marginTop: 0 }}>
-                <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.text, marginBottom: 16 }}>Recent Activity</Text>
-                <SkeletonList count={4} height={70} />
-              </View>
-            ) : (
-              <RecentActivity 
-                items={items}
-                recentLogs={recentLogs}
-                getIcon={getIcon}
-                getLabel={getLabel}
-                getColor={getColor}
-                formatDate={formatDate}
-                isDesktop={false}
-                scale={scale}
-              />
-            )}
-
-            {isTablet && (
-              <TabletImpactSection impactStats={impactStats} />
-            )}
-
-            <View style={{ width: '100%' }}>
-              <Text style={{ marginBottom: 16, fontSize: 20, fontWeight: '700', color: Colors.text }}>
-                Your Impact Overview
-              </Text>
-              {loading ? (
-                <SkeletonBlock height={160} />
-              ) : (
-                <StatsCard 
-                  weeklyStats={weeklyStats}
-                  impactStats={impactStats}
-                  isCollector={isCollector}
-                  isDesktop={false}
-                  scale={scale}
-                  layout={{ paddingHorizontal: 0, contentMaxWidth: '100%' }}
-                />
-              )}
-            </View>
-          </View>
-        )}
+          <TouchableOpacity 
+            style={styles.historyLink}
+            onPress={() => router.push('/history' as any)}
+          >
+            <Text style={[styles.historyLinkText, { color: colors.textSecondary }]}>
+              View Activity History
+            </Text>
+            <ChevronRight size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -340,17 +123,40 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    width: '100%',
-    paddingTop: 24,
+    paddingTop: 10,
   },
-  desktopGrid: {
+  content: {
+    paddingHorizontal: 20,
+  },
+  sectionHeader: {
     flexDirection: 'row',
-    gap: 32,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    marginTop: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  seeAll: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  historyLink: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 20,
+    marginTop: 20,
+  },
+  historyLinkText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

@@ -1,155 +1,100 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight } from 'lucide-react-native';
-import Colors from '@/constants/colors';
+import { Package } from 'lucide-react-native';
+import { RecyclableItem } from '@/types';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface RecentActivityProps {
-  items: any[];
-  recentLogs: any[];
-  getIcon: (type: string) => string;
-  getLabel: (type: string) => string;
-  getColor: (type: string) => string;
-  formatDate: (date: string) => string;
-  isDesktop?: boolean;
-  scale?: (size: number) => number;
+  items: RecyclableItem[];
 }
 
-export const RecentActivity: React.FC<RecentActivityProps> = ({
-  items,
-  recentLogs,
-  getIcon,
-  getLabel,
-  getColor,
-  formatDate,
-  isDesktop = false,
-  scale = (size) => size
-}) => {
+export const RecentActivity: React.FC<RecentActivityProps> = ({ items }) => {
+  const { colors, isDark } = useTheme();
+
+  if (items.length === 0) {
+    return (
+      <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Package size={24} color={colors.border} />
+        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No recent activity</Text>
+      </View>
+    );
+  }
+
+  const getEmoji = (typeId: string) => {
+    return '♻️';
+  };
+
   return (
-    <View style={[
-      styles.section,
-      isDesktop && styles.desktopGridItem
-    ]}>
-      <Text style={[styles.sectionTitle, isDesktop && { fontSize: scale(24), marginBottom: scale(24) }]}>
-        Recent Activity
-      </Text>
-      
-      {recentLogs.length > 0 ? (
-        recentLogs.slice(0, isDesktop ? 6 : 4).map((item) => {
-          const weight = item.unit === 'kg' ? item.quantity : item.quantity * 0.05;
-          
-          return (
-            <View key={item.id} style={[
-              styles.recentItem,
-              isDesktop && { padding: scale(16), marginBottom: scale(12), borderRadius: scale(14) }
-            ]}>
-              <View style={[
-                styles.recentItemIcon,
-                { 
-                  backgroundColor: getColor(item.type) + '15',
-                  width: isDesktop ? scale(48) : 40,
-                  height: isDesktop ? scale(48) : 40,
-                  borderRadius: isDesktop ? scale(12) : 10,
-                }
-              ]}>
-                <Text style={isDesktop && { fontSize: scale(20) }}>
-                  {getIcon(item.type)}
-                </Text>
-              </View>
-              <View style={styles.recentItemInfo}>
-                <Text style={[
-                  styles.recentItemType,
-                  isDesktop && { fontSize: scale(16) }
-                ]}>
-                  {item.item_name || getLabel(item.type)}
-                </Text>
-                <Text style={[
-                  styles.recentItemDate,
-                  isDesktop && { fontSize: scale(14) }
-                ]}>
-                  {formatDate(item.created_at)} • {weight.toFixed(1)}kg
-                </Text>
-              </View>
-              <ChevronRight size={20} color={Colors.textSecondary} />
-            </View>
-          );
-        })
-      ) : (
-        <View style={[
-          styles.emptyStateSmall,
-          isDesktop && { padding: scale(40), borderRadius: scale(16) }
-        ]}>
-          <Text style={[styles.emptyStateTextSmall, isDesktop && { fontSize: scale(16) }]}>
-            No activity yet
-          </Text>
-          <Text style={[styles.emptyStateSubtextSmall, isDesktop && { fontSize: scale(14) }]}>
-            Your recent logs will appear here
+    <View style={styles.container}>
+      {items.map((item) => (
+        <View key={item.id} style={[styles.activityCard, { backgroundColor: colors.surface }]}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.surfaceSecondary }]}>
+            <Text style={{ fontSize: 18 }}>{getEmoji(item.recyclableTypeId)}</Text>
+          </View>
+          <View style={styles.info}>
+            <Text style={[styles.title, { color: colors.text }]}>{item.type?.name || 'Recyclable Item'}</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              {item.quantity} units • {item.estimatedWeightKg.toFixed(1)} kg
+            </Text>
+          </View>
+          <Text style={[styles.date, { color: colors.textSecondary }]}>
+            {new Date(item.loggedAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })}
           </Text>
         </View>
-      )}
+      ))}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  section: {
-    marginBottom: 32,
-  },
-  desktopGridItem: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 16,
-  },
-  recentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 8,
+  container: {
     gap: 12,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
+  },
+  activityCard: {
+    flexDirection: 'row',
+    padding: 16,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
     elevation: 1,
   },
-  recentItemIcon: {
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  recentItemInfo: {
+  info: {
     flex: 1,
+    marginLeft: 12,
   },
-  recentItemType: {
+  title: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 2,
   },
-  recentItemDate: {
+  subtitle: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    marginTop: 2,
   },
-  emptyStateSmall: {
+  date: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  emptyCard: {
+    padding: 24,
+    borderRadius: 24,
     alignItems: 'center',
-    padding: 30,
-    backgroundColor: Colors.white,
-    borderRadius: 16,
+    justifyContent: 'center',
+    gap: 8,
+    borderStyle: 'dashed',
+    borderWidth: 1,
   },
-  emptyStateTextSmall: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  emptyStateSubtextSmall: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginTop: 4,
-    textAlign: 'center',
+  emptyText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

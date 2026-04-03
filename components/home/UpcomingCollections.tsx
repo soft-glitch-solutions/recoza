@@ -1,130 +1,94 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Calendar, Clock } from 'lucide-react-native';
+import { Clock, Package, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import Colors from '@/constants/colors';
+import { Collection } from '@/types';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface UpcomingCollectionsProps {
-  collections: any[];
-  isDesktop?: boolean;
-  scale?: (size: number) => number;
+  collections: Collection[];
 }
 
-export const UpcomingCollections: React.FC<UpcomingCollectionsProps> = ({
-  collections,
-  isDesktop = false,
-  scale = (size) => size
-}) => {
+export const UpcomingCollections: React.FC<UpcomingCollectionsProps> = ({ collections }) => {
   const router = useRouter();
+  const { colors, isDark } = useTheme();
 
-  if (!collections.length) return null;
+  if (collections.length === 0) {
+    return (
+      <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Clock size={24} color={colors.border} />
+        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No pending collections</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, isDesktop && { fontSize: scale(24) }]}>
-          Upcoming Collections
-        </Text>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/collections')}>
-          <Text style={[styles.seeAllText, isDesktop && { fontSize: scale(16) }]}>
-            View all
-          </Text>
-        </TouchableOpacity>
-      </View>
-
+    <View style={styles.container}>
       {collections.map((collection) => (
-        <View key={collection.id} style={[
-          styles.collectionCard,
-          isDesktop && { padding: scale(20), marginBottom: scale(12), borderRadius: scale(16) }
-        ]}>
-          <View style={styles.collectionHeader}>
-            <View style={styles.collectionInfo}>
-              <Text style={[styles.collectionDate, isDesktop && { fontSize: scale(16) }]}>
-                <Calendar size={14} color={Colors.primary} /> {new Date(collection.scheduled_date).toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short' })}
-              </Text>
-            </View>
-            <View style={[styles.collectionBadge, { backgroundColor: Colors.warning + '20' }]}>
-              <Clock size={14} color={Colors.warning} />
-              <Text style={[styles.collectionStatus, { color: Colors.warning }]}>Scheduled</Text>
-            </View>
+        <TouchableOpacity
+          key={collection.id}
+          style={[styles.taskCard, { backgroundColor: colors.surface }]}
+          onPress={() => router.push(`/collections/${collection.id}` as any)}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: isDark ? '#1E3A8A' : '#F0F9FF' }]}>
+            <Package size={18} color={colors.primary} />
           </View>
-          <Text style={[styles.collectionHousehold, isDesktop && { fontSize: scale(18) }]}>
-            {collection.household?.full_name || 'Household'}
-          </Text>
-          <Text style={[styles.collectionEstimate, isDesktop && { fontSize: scale(14) }]}>
-            Est. {collection.total_weight_kg?.toFixed(1)}kg
-          </Text>
-        </View>
+          <View style={styles.info}>
+            <Text style={[styles.title, { color: colors.text }]}>Household {collection.householdId.slice(0, 8)}</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{new Date(collection.scheduledDate).toLocaleDateString()}</Text>
+          </View>
+          <ChevronRight size={18} color={colors.border} />
+        </TouchableOpacity>
       ))}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  section: {
-    marginBottom: 32,
+  container: {
+    gap: 12,
   },
-  sectionHeader: {
+  taskCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  seeAllText: {
-    fontSize: 14,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  collectionCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
     padding: 16,
-    marginBottom: 8,
-    shadowColor: Colors.black,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 1,
   },
-  collectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  collectionInfo: {
+  info: {
     flex: 1,
+    marginLeft: 12,
   },
-  collectionDate: {
-    fontSize: 13,
-    color: Colors.textSecondary,
+  title: {
+    fontSize: 14,
+    fontWeight: '600',
   },
-  collectionBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  collectionStatus: {
+  subtitle: {
     fontSize: 12,
-    fontWeight: '600',
+    marginTop: 2,
   },
-  collectionHousehold: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 4,
+  emptyCard: {
+    padding: 24,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderStyle: 'dashed',
+    borderWidth: 1,
   },
-  collectionEstimate: {
-    fontSize: 13,
-    color: Colors.textSecondary,
+  emptyText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

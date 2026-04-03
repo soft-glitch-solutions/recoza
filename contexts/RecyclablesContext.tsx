@@ -1,396 +1,409 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
-import { RecyclableItem, RecyclableType, RecyclablePrice, Collection, CollectorStats, HouseholdConnection } from '@/types';
-import { useAuth } from './AuthContext';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from './AuthContext';
+import { RecyclableItem, RecyclableType, RecyclablePrice, Collection, CollectorStats, HouseholdConnection } from '@/types';
+import { Alert } from 'react-native';
 
-// Define the recyclables prices
-export const RECYCLABLE_PRICES: RecyclablePrice[] = [
-  { type: 'plastic', pricePerKg: 8.50, label: 'Plastic', icon: 'bottle-soda' },
-  { type: 'paper', pricePerKg: 3.00, label: 'Paper', icon: 'newspaper' },
-  { type: 'glass', pricePerKg: 1.50, label: 'Glass', icon: 'wine-bottle' },
-  { type: 'metal', pricePerKg: 12.00, label: 'Metal/Cans', icon: 'cylinder' },
-  { type: 'cardboard', pricePerKg: 2.50, label: 'Cardboard', icon: 'box' },
-];
-
-// Define the context type
 interface RecyclablesContextType {
   recyclableItems: RecyclableItem[];
+  recyclableTypes: RecyclableType[];
   collections: Collection[];
   collectorStats: CollectorStats | null;
-  householdConnections: HouseholdConnection[];
+  activeConnections: HouseholdConnection[];
+  pendingConnections: HouseholdConnection[];
   loading: boolean;
-  error: string | null;
-  fetchRecyclableItems: () => Promise<void>;
-  fetchCollections: () => Promise<void>;
-  fetchCollectorStats: () => Promise<void>;
-  fetchHouseholdConnections: () => Promise<void>;
-  addRecyclableItem: (item: Omit<RecyclableItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<{ success: boolean; error?: string }>;
+  refreshData: () => Promise<void>;
+  addRecyclableItem: (item: Omit<RecyclableItem, 'id' | 'loggedAt' | 'collected'>) => Promise<{ success: boolean; error?: string }>;
   updateRecyclableItem: (id: string, updates: Partial<RecyclableItem>) => Promise<{ success: boolean; error?: string }>;
   deleteRecyclableItem: (id: string) => Promise<{ success: boolean; error?: string }>;
-  createCollection: (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => Promise<{ success: boolean; error?: string; data?: Collection }>;
+  createCollection: (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => Promise<{ success: boolean; error?: string }>;
   updateCollection: (id: string, updates: Partial<Collection>) => Promise<{ success: boolean; error?: string }>;
-  connectToHousehold: (householdId: string, inviteCode?: string) => Promise<{ success: boolean; error?: string }>;
-  disconnectFromHousehold: (connectionId: string) => Promise<{ success: boolean; error?: string }>;
-  getPriceForType: (type: RecyclableType) => RecyclablePrice | undefined;
-  calculateEarnings: (items: { type: RecyclableType; weight: number }[]) => number;
+  fetchHouseholdConnections: () => Promise<void>;
+  addHouseholdConnection: (inviteCode: string) => Promise<{ success: boolean; error?: string }>;
+  updateConnectionStatus: (connectionId: string, status: 'active' | 'inactive' | 'disconnected') => Promise<{ success: boolean; error?: string }>;
 }
 
-// Create context
-const RecyclablesContext = createContext<RecyclablesContextType | null>(null);
+const RecyclablesContext = createContext<RecyclablesContextType | undefined>(undefined);
 
-// Provider component
-export function RecyclablesProvider({ children }: { children: React.ReactNode }) {
+export const RecyclablesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [recyclableItems, setRecyclableItems] = useState<RecyclableItem[]>([]);
+  const [recyclableTypes, setRecyclableTypes] = useState<RecyclableType[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [collectorStats, setCollectorStats] = useState<CollectorStats | null>(null);
-  const [householdConnections, setHouseholdConnections] = useState<HouseholdConnection[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [activeConnections, setActiveConnections] = useState<HouseholdConnection[]>([]);
+  const [pendingConnections, setPendingConnections] = useState<HouseholdConnection[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch recyclable items
+  const fetchRecyclableTypes = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('recyclable_types' as any)
+        .select('*')
+        .eq('active', true);
+
+      if (error) throw error;
+      setRecyclableTypes(data as RecyclableType[]);
+    } catch (error) {
+      console.error('Error fetching recyclable types:', error);
+    }
+  }, []);
+
   const fetchRecyclableItems = useCallback(async () => {
     if (!user) return;
     
-    setLoading(true);
-    setError(null);
-    
     try {
       const { data, error } = await supabase
-        .from('recyclable_items')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      
+        .from('logged_items' as any)
+        .select(`
+          *,
+          type:recyclable_type_id(*)
+        `)
+        .eq('household_id', user.id)
+        .order('logged_at', { ascending: false });
+
       if (error) throw error;
       
-      setRecyclableItems(data || []);
-    } catch (err: any) {
-      console.error('Error fetching recyclable items:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      const formattedItems: RecyclableItem[] = (data || []).map((item: any) => ({
+        id: item.id,
+        householdId: item.household_id,
+        recyclableTypeId: item.recyclable_type_id,
+        type: item.type,
+        quantity: item.quantity,
+        estimatedWeightKg: item.estimated_weight_kg,
+        notes: item.notes,
+        loggedAt: item.logged_at,
+        collected: item.collected,
+        collectionId: item.collection_id
+      }));
+
+      setRecyclableItems(formattedItems);
+    } catch (error) {
+      console.error('Error fetching recyclable items:', error);
     }
   }, [user]);
 
-  // Fetch collections
   const fetchCollections = useCallback(async () => {
     if (!user) return;
-    
-    setLoading(true);
-    setError(null);
-    
+
     try {
-      const { data, error } = await supabase
-        .from('collections')
-        .select(`
-          *,
-          collector:collector_id(*),
-          household:household_id(*)
-        `)
-        .or(`collector_id.eq.${user.id},household_id.eq.${user.id}`)
-        .order('scheduled_date', { ascending: true });
+      const { data: profileData } = await supabase
+        .from('user_profiles' as any)
+        .select('is_collector')
+        .eq('id', user.id)
+        .single();
       
+      const profile = profileData as any;
+
+      let query = supabase.from('collections' as any).select('*');
+
+      if (profile?.is_collector) {
+        // Fetch collections where user is either the collector OR the household
+        query = query.or(`collector_id.eq.${user.id},household_id.eq.${user.id}`);
+      } else {
+        query = query.eq('household_id', user.id);
+      }
+
+      const { data, error } = await query.order('scheduled_date', { ascending: false });
+
       if (error) throw error;
       
-      setCollections(data || []);
-    } catch (err: any) {
-      console.error('Error fetching collections:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      const formattedCollections: Collection[] = (data || []).map((c: any) => ({
+        id: c.id,
+        collectorId: c.collector_id,
+        householdId: c.household_id,
+        householdName: c.household_name || `Household ${c.household_id.slice(0, 8)}`,
+        scheduledDate: c.scheduled_date,
+        status: c.status,
+        items: c.items || [],
+        totalWeight: c.total_weight || 0,
+        estimatedEarnings: c.estimated_earnings || 0,
+        completedAt: c.completed_at
+      }));
+
+      setCollections(formattedCollections);
+    } catch (error) {
+      console.error('Error fetching collections:', error);
     }
   }, [user]);
 
-  // Fetch collector stats
   const fetchCollectorStats = useCallback(async () => {
     if (!user) return;
-    
-    setLoading(true);
-    setError(null);
-    
+
     try {
-      const { data, error } = await supabase
-        .from('collector_stats')
-        .select('*')
-        .eq('collector_id', user.id)
+      const { data: profileData } = await supabase
+        .from('user_profiles' as any)
+        .select('is_collector')
+        .eq('id', user.id)
         .single();
       
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
-      
-      setCollectorStats(data || null);
-    } catch (err: any) {
-      console.error('Error fetching collector stats:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      const profile = profileData as any;
+
+      if (!profile?.is_collector) return;
+
+      const { data, error } = await supabase
+        .from('collections' as any)
+        .select('total_weight_kg, actual_earnings')
+        .eq('collector_id', user.id)
+        .eq('status', 'completed');
+
+      if (error) throw error;
+
+      const statsData = data as any[];
+      const totalWeight = statsData.reduce((acc, curr) => acc + (curr.total_weight_kg || 0), 0);
+      const totalEarnings = statsData.reduce((acc, curr) => acc + (curr.actual_earnings || 0), 0);
+
+      setCollectorStats({
+        totalWeight,
+        totalEarnings,
+        totalCollections: statsData.length,
+        householdsCount: 0,
+        weeklyEarnings: totalEarnings,
+      });
+    } catch (error) {
+      console.error('Error fetching collector stats:', error);
     }
   }, [user]);
 
-  // Fetch household connections
   const fetchHouseholdConnections = useCallback(async () => {
     if (!user) return;
-    
-    setLoading(true);
-    setError(null);
-    
+
     try {
+      const { data: profileData } = await supabase
+        .from('user_profiles' as any)
+        .select('is_collector')
+        .eq('id', user.id)
+        .single();
+      
+      const profile = profileData as any;
+
+      if (!profile?.is_collector) return;
+
       const { data, error } = await supabase
-        .from('household_connections')
+        .from('household_connections' as any)
         .select(`
           *,
-          household:household_id(*),
-          collector:collector_id(*)
+          household:household_id(id, full_name, phone_number)
         `)
-        .or(`collector_id.eq.${user.id},household_id.eq.${user.id}`)
-        .order('created_at', { ascending: false });
-      
+        .eq('collector_id', user.id);
+
       if (error) throw error;
-      
-      // Map the response to the HouseholdConnection interface
-      const mappedData = (data || []).map((conn: any) => ({
-        id: conn.id,
-        householdId: conn.household_id,
-        householdName: conn.household?.full_name || 'Unknown Household',
-        householdEmail: conn.household?.email || 'No Email',
-        connectedAt: conn.created_at || conn.connected_at,
-        totalItemsLogged: conn.total_items_logged || 0,
-        status: conn.status,
-      }));
-      
-      setHouseholdConnections(mappedData);
-    } catch (err: any) {
-      console.error('Error fetching household connections:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+
+      const connections = data as any[];
+      setActiveConnections(connections.filter(c => c.status === 'active'));
+      setPendingConnections(connections.filter(c => c.status === 'pending'));
+    } catch (error) {
+      console.error('Error fetching household connections:', error);
     }
   }, [user]);
 
-  // Add recyclable item
-  const addRecyclableItem = async (item: Omit<RecyclableItem, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) return { success: false, error: 'User not authenticated' };
-    
-    try {
-      const { data, error } = await supabase
-        .from('recyclable_items')
-        .insert([{ ...item, user_id: user.id }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      setRecyclableItems(prev => [data, ...prev]);
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error adding recyclable item:', err);
-      return { success: false, error: err.message };
-    }
-  };
+  const refreshData = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchRecyclableTypes(),
+      fetchRecyclableItems(),
+      fetchCollections(),
+      fetchCollectorStats(),
+      fetchHouseholdConnections(),
+    ]);
+    setLoading(false);
+  }, [fetchRecyclableTypes, fetchRecyclableItems, fetchCollections, fetchCollectorStats, fetchHouseholdConnections]);
 
-  // Update recyclable item
-  const updateRecyclableItem = async (id: string, updates: Partial<RecyclableItem>) => {
-    if (!user) return { success: false, error: 'User not authenticated' };
-    
-    try {
-      const { data, error } = await supabase
-        .from('recyclable_items')
-        .update(updates)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      setRecyclableItems(prev => prev.map(item => item.id === id ? data : item));
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error updating recyclable item:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-  // Delete recyclable item
-  const deleteRecyclableItem = async (id: string) => {
-    if (!user) return { success: false, error: 'User not authenticated' };
-    
-    try {
-      const { error } = await supabase
-        .from('recyclable_items')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      setRecyclableItems(prev => prev.filter(item => item.id !== id));
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error deleting recyclable item:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-  // Create collection
-  const createCollection = async (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) return { success: false, error: 'User not authenticated' };
-    
-    try {
-      const { data, error } = await supabase
-        .from('collections')
-        .insert([collection])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      setCollections(prev => [data, ...prev]);
-      return { success: true, data };
-    } catch (err: any) {
-      console.error('Error creating collection:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-  // Update collection
-  const updateCollection = async (id: string, updates: Partial<Collection>) => {
-    if (!user) return { success: false, error: 'User not authenticated' };
-    
-    try {
-      const { data, error } = await supabase
-        .from('collections')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      setCollections(prev => prev.map(col => col.id === id ? data : col));
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error updating collection:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-  // Connect to household
-  const connectToHousehold = async (householdId: string, inviteCode?: string) => {
-    if (!user) return { success: false, error: 'User not authenticated' };
-    
-    try {
-      // If invite code provided, validate it
-      if (inviteCode) {
-        const { data: household, error: householdError } = await supabase
-          .from('households')
-          .select('id')
-          .eq('invite_code', inviteCode)
-          .single();
-        
-        if (householdError || !household) {
-          return { success: false, error: 'Invalid invite code' };
-        }
-        householdId = household.id;
-      }
-      
-      const { data, error } = await supabase
-        .from('household_connections')
-        .insert([{
-          household_id: householdId,
-          collector_id: user.id,
-          status: 'pending'
-        }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      setHouseholdConnections(prev => [data, ...prev]);
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error connecting to household:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-  // Disconnect from household
-  const disconnectFromHousehold = async (connectionId: string) => {
-    if (!user) return { success: false, error: 'User not authenticated' };
-    
-    try {
-      const { error } = await supabase
-        .from('household_connections')
-        .update({ status: 'disconnected' })
-        .eq('id', connectionId);
-      
-      if (error) throw error;
-      
-      setHouseholdConnections(prev => prev.filter(conn => conn.id !== connectionId));
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error disconnecting from household:', err);
-      return { success: false, error: err.message };
-    }
-  };
-
-  // Helper to get price for a type
-  const getPriceForType = (type: RecyclableType): RecyclablePrice | undefined => {
-    return RECYCLABLE_PRICES.find(price => price.type === type);
-  };
-
-  // Helper to calculate earnings
-  const calculateEarnings = (items: { type: RecyclableType; weight: number }[]): number => {
-    return items.reduce((total, item) => {
-      const price = getPriceForType(item.type);
-      return total + (price ? price.pricePerKg * item.weight : 0);
-    }, 0);
-  };
-
-  // Load initial data
   useEffect(() => {
     if (user) {
-      fetchRecyclableItems();
-      fetchCollections();
-      fetchCollectorStats();
-      fetchHouseholdConnections();
+      refreshData();
     }
-  }, [user, fetchRecyclableItems, fetchCollections, fetchCollectorStats, fetchHouseholdConnections]);
+  }, [user, refreshData]);
 
-  const value = {
-    recyclableItems,
-    collections,
-    collectorStats,
-    householdConnections,
-    loading,
-    error,
-    fetchRecyclableItems,
-    fetchCollections,
-    fetchCollectorStats,
-    fetchHouseholdConnections,
-    addRecyclableItem,
-    updateRecyclableItem,
-    deleteRecyclableItem,
-    createCollection,
-    updateCollection,
-    connectToHousehold,
-    disconnectFromHousehold,
-    getPriceForType,
-    calculateEarnings,
+  const addRecyclableItem = async (item: Omit<RecyclableItem, 'id' | 'loggedAt' | 'collected'>) => {
+    if (!user) return { success: false, error: 'User not authenticated' };
+
+    try {
+      const { error } = await supabase
+        .from('logged_items' as any)
+        .insert([{
+          household_id: user.id,
+          recyclable_type_id: item.recyclableTypeId,
+          quantity: item.quantity,
+          estimated_weight_kg: item.estimatedWeightKg,
+          notes: item.notes,
+          collected: false
+        } as any]);
+
+      if (error) throw error;
+      
+      await fetchRecyclableItems();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error adding recyclable item:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const updateRecyclableItem = async (id: string, updates: Partial<RecyclableItem>) => {
+    try {
+      const dbUpdates: any = {};
+      if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
+      if (updates.estimatedWeightKg !== undefined) dbUpdates.estimated_weight_kg = updates.estimatedWeightKg;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+      if (updates.collected !== undefined) dbUpdates.collected = updates.collected;
+      if (updates.collectionId !== undefined) dbUpdates.collection_id = updates.collectionId;
+
+      const { error } = await supabase
+        .from('logged_items' as any)
+        .update(dbUpdates as any)
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchRecyclableItems();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error updating recyclable item:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const deleteRecyclableItem = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('logged_items' as any)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchRecyclableItems();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error deleting recyclable item:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const createCollection = async (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { error } = await supabase
+        .from('collections' as any)
+        .insert([collection as any]);
+
+      if (error) throw error;
+      await fetchCollections();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error creating collection:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const updateCollection = async (id: string, updates: Partial<Collection>) => {
+    try {
+      const { error } = await supabase
+        .from('collections' as any)
+        .update(updates as any)
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchCollections();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error updating collection:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const addHouseholdConnection = async (inviteCode: string) => {
+    if (!user) return { success: false, error: 'User not authenticated' };
+
+    try {
+      // 1. Find household by invite code
+      const { data: householdData, error: fetchError } = await supabase
+        .from('user_profiles' as any)
+        .select('id')
+        .eq('invite_code', inviteCode)
+        .single();
+      
+      const household = householdData as any;
+
+      if (fetchError || !household) {
+        return { success: false, error: 'Invalid invite code' };
+      }
+
+      // 2. Check if already connected
+      const { data: existingConnection } = await supabase
+        .from('household_connections' as any)
+        .select('id')
+        .eq('collector_id', user.id)
+        .eq('household_id', household.id)
+        .maybeSingle();
+
+      if (existingConnection) {
+        return { success: false, error: 'Already connected to this household' };
+      }
+
+      // 3. Create connection
+      const { error: connectError } = await supabase
+        .from('household_connections' as any)
+        .insert([{
+          household_id: household.id,
+          collector_id: user.id,
+          status: 'pending'
+        } as any]);
+
+      if (connectError) throw connectError;
+      
+      await fetchHouseholdConnections();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error adding household connection:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const updateConnectionStatus = async (connectionId: string, status: 'active' | 'inactive' | 'disconnected') => {
+    try {
+      const { error } = await supabase
+        .from('household_connections' as any)
+        .update({ status } as any)
+        .eq('id', (connectionId as any));
+
+      if (error) throw error;
+      await fetchHouseholdConnections();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error updating connection status:', error);
+      return { success: false, error: error.message };
+    }
   };
 
   return (
-    <RecyclablesContext.Provider value={value}>
+    <RecyclablesContext.Provider
+      value={{
+        recyclableItems,
+        recyclableTypes,
+        collections,
+        collectorStats,
+        activeConnections,
+        pendingConnections,
+        loading,
+        refreshData,
+        addRecyclableItem,
+        updateRecyclableItem,
+        deleteRecyclableItem,
+        createCollection,
+        updateCollection,
+        fetchHouseholdConnections,
+        addHouseholdConnection,
+        updateConnectionStatus,
+      }}
+    >
       {children}
     </RecyclablesContext.Provider>
   );
-}
+};
 
-// Custom hook
-export function useRecyclables() {
+export const useRecyclables = () => {
   const context = useContext(RecyclablesContext);
-  if (context === null) {
+  if (context === undefined) {
     throw new Error('useRecyclables must be used within a RecyclablesProvider');
   }
   return context;
-}
+};

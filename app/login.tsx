@@ -7,14 +7,13 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
-  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Recycle, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 const isSmallScreen = height < 700;
@@ -22,7 +21,6 @@ const isVerySmallScreen = height < 600;
 const isTinyScreen = height < 500;
 const isTablet = width >= 768;
 const isDesktop = width >= 1024;
-const isLargeDesktop = width >= 1440;
 
 // Conservative scaling for desktop
 const scale = (size: number) => {
@@ -61,6 +59,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signIn, setOnboardingComplete } = useAuth();
+  const { colors, isDark } = useTheme();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -68,7 +67,7 @@ export default function LoginScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
 
-  // Desktop layout configuration - exactly like Uthutho
+  // Desktop layout configuration
   const getLayoutConfig = () => {
     if (isDesktop) {
       return {
@@ -97,52 +96,37 @@ export default function LoginScreen() {
   const layoutConfig = getLayoutConfig();
 
   const handleLogin = async () => {
-    // Clear any previous errors
     setErrorMessage(null);
-    
-    // Validate inputs
     if (!email.trim()) {
       setErrorMessage('Email is required');
       return;
     }
-    
     if (!password) {
       setErrorMessage('Password is required');
       return;
     }
-    
     setIsLoading(true);
-    
     try {
-      // Call signIn from AuthContext
       const result = await signIn(email, password);
-      
-      // Check if login was successful
       if (result.success) {
-        // Mark onboarding as complete
         if (setOnboardingComplete) {
           await setOnboardingComplete(true);
         }
-        // Navigate to home screen
-        router.replace('/(tabs)/(home)');
+        router.replace('/(tabs)/(home)' as any);
       } else {
-        // Display error message
         setErrorMessage(result.error || 'Invalid email or password');
       }
     } catch (error) {
-      // Handle unexpected errors
       setErrorMessage('An error occurred. Please try again.');
-      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      {/* Background Gradient */}
+    <View style={[styles.container, { backgroundColor: colors.primary }]}>
       <LinearGradient
-        colors={[Colors.primary, Colors.primaryDark]}
+        colors={[colors.primary, colors.primaryDark]}
         style={StyleSheet.absoluteFillObject}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -153,7 +137,7 @@ export default function LoginScreen() {
         contentContainerStyle={[
           styles.contentContainer,
           {
-            maxWidth: layoutConfig.maxContentWidth,
+            maxWidth: layoutConfig.maxContentWidth as any,
             paddingTop: insets.top + (isDesktop ? 40 : 20),
             paddingBottom: insets.bottom + (isDesktop ? 40 : 20),
             paddingHorizontal: layoutConfig.paddingHorizontal,
@@ -162,7 +146,6 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Desktop Row Layout */}
         <View style={[
           styles.rowContainer,
           {
@@ -172,8 +155,7 @@ export default function LoginScreen() {
             gap: isDesktop ? 60 : 0,
           }
         ]}>
-          {/* Left Side - Branding */}
-          <View style={[styles.leftColumn, { width: layoutConfig.leftWidth }]}>
+          <View style={[styles.leftColumn, { width: layoutConfig.leftWidth as any }]}>
             <View style={styles.logoWrapper}>
               <View style={[
                 styles.logoContainer,
@@ -183,26 +165,17 @@ export default function LoginScreen() {
                   borderRadius: isDesktop ? 80 : scale(60),
                 }
               ]}>
-                <Recycle 
-                  size={isDesktop ? 80 : scale(60)} 
-                  color="#ffffff" 
-                  strokeWidth={1.5} 
-                />
+                <Recycle size={isDesktop ? 80 : scale(60)} color="#fff" />
               </View>
             </View>
             
             <View style={styles.brandContainer}>
               <Text style={[
                 styles.brandName,
-                { 
-                  fontSize: isDesktop ? 48 : scale(42),
-                  textAlign: layoutConfig.textAlign,
-                }
+                { fontSize: isDesktop ? 48 : scale(42), textAlign: layoutConfig.textAlign }
               ]}>
                 Recoza
               </Text>
-              
-              {/* Tagline with colors - Uthutho style */}
               <View style={[
                 styles.taglineContainer,
                 { justifyContent: layoutConfig.textAlign === 'left' ? 'flex-start' : 'center' }
@@ -211,13 +184,9 @@ export default function LoginScreen() {
                 <Text style={[styles.taglineText, styles.earnText]}> Earn.</Text>
                 <Text style={[styles.taglineText, styles.sustainText]}> Sustain.</Text>
               </View>
-              
               <Text style={[
                 styles.description,
-                { 
-                  fontSize: isDesktop ? 16 : scale(15),
-                  textAlign: layoutConfig.textAlign,
-                }
+                { fontSize: isDesktop ? 16 : scale(15), textAlign: layoutConfig.textAlign }
               ]}>
                 Join South Africa's community-powered recycling movement. 
                 Turn waste into income while helping the environment.
@@ -225,51 +194,42 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Right Side - Login Form */}
-          <View style={[styles.rightColumn, { width: layoutConfig.rightWidth }]}>
+          <View style={[styles.rightColumn, { width: layoutConfig.rightWidth as any }]}>
             <View style={[
               styles.formCard,
               {
+                backgroundColor: colors.surface,
                 padding: isDesktop ? 40 : scale(24),
               }
             ]}>
-              <Text style={[
-                styles.formTitle,
-                { fontSize: isDesktop ? 28 : scale(26) }
-              ]}>
+              <Text style={[styles.formTitle, { fontSize: isDesktop ? 28 : scale(26), color: colors.text }]}>
                 Welcome Back
               </Text>
-              <Text style={[
-                styles.formSubtitle,
-                { fontSize: isDesktop ? 15 : scale(15) }
-              ]}>
+              <Text style={[styles.formSubtitle, { fontSize: isDesktop ? 15 : scale(15), color: colors.textSecondary }]}>
                 Sign in to continue recycling
               </Text>
 
-              {/* Error Message */}
               {errorMessage && (
                 <View style={styles.errorContainer}>
                   <Text style={styles.errorText}>{errorMessage}</Text>
                 </View>
               )}
 
-              {/* Email Input */}
               <View style={[
                 styles.inputWrapper,
                 {
+                  backgroundColor: colors.surfaceSecondary,
+                  borderColor: colors.borderLight,
                   height: isDesktop ? 52 : scale(50),
                   paddingHorizontal: isDesktop ? 16 : scale(16),
                   marginBottom: isDesktop ? 16 : scale(14),
                 }
               ]}>
-                <Mail size={isDesktop ? 18 : 20} color={Colors.primary} style={styles.inputIcon} />
+                <Mail size={isDesktop ? 18 : 20} color={colors.primary} style={styles.inputIcon} />
                 <TextInput
-                  style={[
-                    styles.input,
-                    { fontSize: isDesktop ? 15 : scale(15) }
-                  ]}
+                  style={[styles.input, { fontSize: isDesktop ? 15 : scale(15), color: colors.text }]}
                   placeholder="Email address"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.textLight}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -279,63 +239,51 @@ export default function LoginScreen() {
                 />
               </View>
 
-              {/* Password Input */}
               <View style={[
                 styles.inputWrapper,
                 {
+                  backgroundColor: colors.surfaceSecondary,
+                  borderColor: colors.borderLight,
                   height: isDesktop ? 52 : scale(50),
                   paddingHorizontal: isDesktop ? 16 : scale(16),
                   marginBottom: isDesktop ? 16 : scale(14),
                 }
               ]}>
-                <Lock size={isDesktop ? 18 : 20} color={Colors.primary} style={styles.inputIcon} />
+                <Lock size={isDesktop ? 18 : 20} color={colors.primary} style={styles.inputIcon} />
                 <TextInput
-                  style={[
-                    styles.input,
-                    { fontSize: isDesktop ? 15 : scale(15) }
-                  ]}
+                  style={[styles.input, { fontSize: isDesktop ? 15 : scale(15), color: colors.text }]}
                   placeholder="Password"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.textLight}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!passwordVisible}
                   autoComplete="password"
                   editable={!isLoading}
                 />
-                <TouchableOpacity
-                  onPress={() => setPasswordVisible(!passwordVisible)}
-                  disabled={isLoading}
-                >
+                <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)} disabled={isLoading}>
                   {passwordVisible ? (
-                    <EyeOff size={isDesktop ? 18 : 20} color="#999" />
+                    <EyeOff size={isDesktop ? 18 : 20} color={colors.textLight} />
                   ) : (
-                    <Eye size={isDesktop ? 18 : 20} color="#999" />
+                    <Eye size={isDesktop ? 18 : 20} color={colors.textLight} />
                   )}
                 </TouchableOpacity>
               </View>
 
-              {/* Forgot Password */}
               <TouchableOpacity 
                 style={styles.forgotPasswordButton}
-                onPress={() => {
-                  // Handle forgot password
-                  console.log('Forgot password pressed');
-                }}
+                onPress={() => console.log('Forgot password pressed')}
                 disabled={isLoading}
               >
-                <Text style={[
-                  styles.forgotPasswordText,
-                  { fontSize: isDesktop ? 14 : scale(14) }
-                ]}>
+                <Text style={[styles.forgotPasswordText, { fontSize: isDesktop ? 14 : scale(14), color: colors.primary }]}>
                   Forgot Password?
                 </Text>
               </TouchableOpacity>
 
-              {/* Sign In Button */}
               <TouchableOpacity
                 style={[
                   styles.loginButton,
                   {
+                    backgroundColor: colors.primary,
                     height: isDesktop ? 52 : scale(50),
                     borderRadius: isDesktop ? 26 : scale(25),
                     marginBottom: isDesktop ? 20 : scale(16),
@@ -345,42 +293,25 @@ export default function LoginScreen() {
                 onPress={handleLogin}
                 disabled={isLoading}
               >
-                <Text style={[
-                  styles.loginButtonText,
-                  { fontSize: isDesktop ? 16 : scale(16) }
-                ]}>
+                <Text style={[styles.loginButtonText, { fontSize: isDesktop ? 16 : scale(16) }]}>
                   {isLoading ? 'Signing in...' : 'Sign In'}
                 </Text>
               </TouchableOpacity>
 
-              {/* Divider */}
               <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={[
-                  styles.dividerText,
-                  { fontSize: isDesktop ? 14 : scale(14) }
-                ]}>
+                <View style={[styles.dividerLine, { backgroundColor: colors.borderLight }]} />
+                <Text style={[styles.dividerText, { fontSize: isDesktop ? 14 : scale(14), color: colors.textSecondary }]}>
                   or
                 </Text>
-                <View style={styles.dividerLine} />
+                <View style={[styles.dividerLine, { backgroundColor: colors.borderLight }]} />
               </View>
 
-              {/* Sign Up Link */}
               <View style={styles.signupContainer}>
-                <Text style={[
-                  styles.signupText,
-                  { fontSize: isDesktop ? 15 : scale(15) }
-                ]}>
+                <Text style={[styles.signupText, { fontSize: isDesktop ? 15 : scale(15), color: colors.textSecondary }]}>
                   Don't have an account?{' '}
                 </Text>
-                <TouchableOpacity 
-                  onPress={() => router.push('/register')}
-                  disabled={isLoading}
-                >
-                  <Text style={[
-                    styles.signupLink,
-                    { fontSize: isDesktop ? 15 : scale(15) }
-                  ]}>
+                <TouchableOpacity onPress={() => router.push('/register')} disabled={isLoading}>
+                  <Text style={[styles.signupLink, { fontSize: isDesktop ? 15 : scale(15), color: colors.primary }]}>
                     Create Account
                   </Text>
                 </TouchableOpacity>
@@ -389,12 +320,8 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Footer Credit */}
         <View style={styles.footer}>
-          <Text style={[
-            styles.footerText,
-            { fontSize: isDesktop ? 12 : scale(12) }
-          ]}>
+          <Text style={[styles.footerText, { fontSize: isDesktop ? 12 : scale(12) }]}>
             Developed by Recoza
           </Text>
         </View>
@@ -404,168 +331,41 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.primary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    alignSelf: 'center',
-    width: '100%',
-    justifyContent: 'center',
-    minHeight: '100%',
-  },
-  rowContainer: {
-    width: '100%',
-  },
-  leftColumn: {
-    alignItems: 'center',
-  },
-  rightColumn: {
-    alignItems: 'center',
-  },
-  logoWrapper: {
-    marginBottom: isDesktop ? 24 : verticalScale(20),
-  },
-  logoContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  brandContainer: {
-    marginBottom: isDesktop ? 0 : verticalScale(30),
-  },
-  brandName: {
-    fontWeight: '700',
-    color: '#ffffff',
-    marginBottom: isDesktop ? 8 : scale(8),
-    letterSpacing: -0.5,
-  },
-  taglineContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: isDesktop ? 16 : scale(12),
-  },
-  taglineText: {
-    fontSize: isDesktop ? 22 : scale(20),
-    fontWeight: '600',
-  },
-  recycleText: {
-    color: '#ffffff',
-  },
-  earnText: {
-    color: '#FFD700',
-  },
-  sustainText: {
-    color: '#98FB98',
-  },
-  description: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: isDesktop ? 24 : scale(22),
-    maxWidth: isDesktop ? 400 : '100%',
-  },
-  formCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: isDesktop ? 24 : scale(20),
-    width: '100%',
-    maxWidth: isDesktop ? 450 : '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  formTitle: {
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: isDesktop ? 8 : scale(6),
-  },
-  formSubtitle: {
-    color: Colors.textSecondary,
-    marginBottom: isDesktop ? 24 : scale(20),
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderRadius: isDesktop ? 12 : scale(12),
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    gap: isDesktop ? 10 : scale(10),
-  },
-  inputIcon: {
-    opacity: 0.7,
-  },
-  input: {
-    flex: 1,
-    color: Colors.text,
-    padding: 0,
-  },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
-    marginBottom: isDesktop ? 24 : scale(20),
-  },
-  forgotPasswordText: {
-    color: Colors.primary,
-    fontWeight: '500',
-  },
-  loginButton: {
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loginButtonDisabled: {
-    opacity: 0.7,
-  },
-  loginButtonText: {
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: isDesktop ? 20 : scale(16),
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e9ecef',
-  },
-  dividerText: {
-    marginHorizontal: isDesktop ? 12 : scale(12),
-    color: Colors.textSecondary,
-  },
-  signupContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  signupText: {
-    color: Colors.textSecondary,
-  },
-  signupLink: {
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  errorContainer: {
-    backgroundColor: '#FFEBEE',
-    padding: isDesktop ? 12 : scale(12),
-    borderRadius: isDesktop ? 8 : scale(8),
-    marginBottom: isDesktop ? 20 : scale(16),
-    borderLeftWidth: 4,
-    borderLeftColor: '#F44336',
-  },
-  errorText: {
-    color: '#D32F2F',
-    fontSize: isDesktop ? 14 : scale(14),
-  },
-  footer: {
-    marginTop: isDesktop ? 40 : verticalScale(30),
-    alignItems: 'center',
-  },
-  footerText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-  },
+  container: { flex: 1 },
+  scrollView: { flex: 1 },
+  contentContainer: { alignSelf: 'center', width: '100%', justifyContent: 'center', minHeight: '100%' },
+  rowContainer: { width: '100%' },
+  leftColumn: { alignItems: 'center' },
+  rightColumn: { alignItems: 'center' },
+  logoWrapper: { marginBottom: isDesktop ? 24 : verticalScale(20) },
+  logoContainer: { backgroundColor: 'rgba(255, 255, 255, 0.15)', justifyContent: 'center', alignItems: 'center' },
+  brandContainer: { marginBottom: isDesktop ? 0 : verticalScale(30) },
+  brandName: { fontWeight: '700', color: '#ffffff', marginBottom: 8, letterSpacing: -0.5 },
+  taglineContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: isDesktop ? 16 : scale(12) },
+  taglineText: { fontSize: isDesktop ? 22 : scale(20), fontWeight: '600' },
+  recycleText: { color: '#ffffff' },
+  earnText: { color: '#FFD700' },
+  sustainText: { color: '#98FB98' },
+  description: { color: 'rgba(255, 255, 255, 0.9)', lineHeight: isDesktop ? 24 : scale(22), maxWidth: isDesktop ? 400 : '100%' },
+  formCard: { borderRadius: isDesktop ? 24 : scale(20), width: '100%', maxWidth: isDesktop ? 450 : '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
+  formTitle: { fontWeight: '700', marginBottom: 6 },
+  formSubtitle: { marginBottom: isDesktop ? 24 : scale(20) },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', borderRadius: isDesktop ? 12 : scale(12), borderWidth: 1, gap: isDesktop ? 10 : scale(10) },
+  inputIcon: { opacity: 0.7 },
+  input: { flex: 1, padding: 0 },
+  forgotPasswordButton: { alignSelf: 'flex-end', marginBottom: isDesktop ? 24 : scale(20) },
+  forgotPasswordText: { fontWeight: '500' },
+  loginButton: { justifyContent: 'center', alignItems: 'center' },
+  loginButtonDisabled: { opacity: 0.7 },
+  loginButtonText: { fontWeight: '600', color: '#ffffff' },
+  divider: { flexDirection: 'row', alignItems: 'center', marginBottom: isDesktop ? 20 : scale(16) },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { marginHorizontal: isDesktop ? 12 : scale(12) },
+  signupContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  signupText: {},
+  signupLink: { fontWeight: '600' },
+  errorContainer: { backgroundColor: '#FFEBEE', padding: 12, borderRadius: 8, marginBottom: 16, borderLeftWidth: 4, borderLeftColor: '#F44336' },
+  errorText: { color: '#D32F2F' },
+  footer: { marginTop: isDesktop ? 40 : verticalScale(30), alignItems: 'center' },
+  footerText: { color: 'rgba(255, 255, 255, 0.6)' },
 });
