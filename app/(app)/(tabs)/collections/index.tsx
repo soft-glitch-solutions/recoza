@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Modal, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
   Package, 
@@ -19,11 +19,13 @@ import {
   Info,
   Briefcase,
   Home,
-  Ban
+  Ban,
+  Copy
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useCallback, useEffect } from 'react';
+import * as Clipboard from 'expo-clipboard';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
@@ -37,7 +39,7 @@ export default function CollectionsScreen() {
     profile,
     applyAsCollector, 
     checkCollectorStatus, 
-    refreshUser,
+    refreshProfile,
     collectorApplication 
   } = useAuth();
   
@@ -45,12 +47,18 @@ export default function CollectionsScreen() {
   const recyclablesContext = useRecyclables() || {};
   const { 
     collections = [], 
-    collectorStats = { weeklyEarnings: 0, householdsCount: 0 }, 
-    completeCollection = () => {}, 
-    scheduleCollection = () => {}, 
-    uncollectedItems = [], 
-    prices = [] 
+    collectorStats = { weeklyEarnings: 0, householdsCount: 0 },
+    householdConnections = [],
+    createCollection,
+    updateCollection,
+    getPriceForType,
+    recyclableItems = [], 
   } = recyclablesContext;
+  
+  const uncollectedItems = recyclableItems.filter(item => !item.collected);
+  
+  const activeConnections = householdConnections.filter(c => c.status === 'active');
+  const pendingConnections = householdConnections.filter(c => c.status === 'pending');
 
   const [refreshing, setRefreshing] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -73,11 +81,11 @@ export default function CollectionsScreen() {
       const { status } = await checkCollectorStatus();
       setApplicationStatus(status);
     }
-    if (refreshUser) {
-      await refreshUser();
+    if (refreshProfile) {
+      await refreshProfile();
     }
     setTimeout(() => setRefreshing(false), 1000);
-  }, [checkCollectorStatus, refreshUser]);
+  }, [checkCollectorStatus, refreshProfile]);
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -310,10 +318,24 @@ export default function CollectionsScreen() {
     setShowScheduleModal(true);
   };
 
-  const handleConfirmSchedule = () => {
+  const handleConfirmSchedule = async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    scheduleCollection('self', 'My Collection', tomorrow.toISOString(), uncollectedItems);
+    
+    if (createCollection && user) {
+      const totalWeight = uncollectedItems.reduce((acc, item) => acc + (item.unit === 'kg' ? item.quantity : item.quantity * 0.05), 0);
+      await createCollection({
+        collectorId: user.id, // Replace with chosen collector when network feature is used
+        householdId: user.id,
+        householdName: profile?.full_name || 'My Household',
+        scheduledDate: tomorrow.toISOString(),
+        status: 'scheduled',
+        items: uncollectedItems,
+        totalWeight: totalWeight,
+        estimatedEarnings: totalWeight * 5, // Approximate
+      });
+    }
+    
     setShowScheduleModal(false);
     showSuccess(
       'Collection Scheduled! 📅',
@@ -321,7 +343,7 @@ export default function CollectionsScreen() {
     );
   };
 
-  const isCollector = profile?.is_collector || false;
+  const isCollector = profile?.is_collector || profile?.collector_approved || false;
   const pendingCollections = collections.filter((c: any) => c?.status === 'scheduled');
   const completedCollections = collections.filter((c: any) => c?.status === 'completed');
 
@@ -418,9 +440,9 @@ export default function CollectionsScreen() {
           >
             <Home size={48} color={Colors.primary} />
           </LinearGradient>
-          <Text style={styles.notCollectorTitle}>Welcome to Collections</Text>
+          <Text style={styles.notCollectorTitle}>Household Collections</Text>
           <Text style={styles.notCollectorText}>
-            As a collector, you can plan weekly collections from households in your network and earn money for recycling.
+            As a household, you log your recyclables and schedule pickups. If you'd like to help collect from others and earn money, you can apply below!
           </Text>
           
           {statusDisplay && (
@@ -796,7 +818,7 @@ export default function CollectionsScreen() {
           <Text style={styles.headerSubtitle}>Manage your pickups</Text>
           <TouchableOpacity 
             style={styles.networkButton}
-            onPress={() => router.push('/(tabs)/collections/network')}
+            onPress={() => router.push('/collections/network' as any)}
           >
             <Users size={18} color={Colors.white} />
             <Text style={styles.networkButtonText}>Network</Text>
@@ -893,7 +915,7 @@ export default function CollectionsScreen() {
                 </View>
                 <TouchableOpacity
                   style={styles.completeButton}
-                  onPress={() => completeCollection(collection.id)}
+                  onPress={() => updateCollection && updateCollection(collection.id, { status: 'completed' })}
                 >
                   <LinearGradient
                     colors={[Colors.success, '#059669']}
@@ -909,6 +931,83 @@ export default function CollectionsScreen() {
             ))}
           </View>
         )}
+
+        <View style={styles.section}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>My Network</Text>
+            <TouchableOpacity onPress={() => router.push('/collections/network' as any)}>
+              <Text style={{ color: Colors.primary, fontWeight: '600' }}>Manage All</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <LinearGradient
+            colors={['#FFFFFF', '#F9FAFB']}
+            style={styles.historyCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginBottom: 16 }}>
+              <View style={{ alignItems: 'center' }}>
+                <Users size={24} color={Colors.primary} />
+                <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.text, marginTop: 8 }}>
+                  {activeConnections.length}
+                </Text>
+                <Text style={{ fontSize: 12, color: Colors.textSecondary }}>Connected</Text>
+              </View>
+              <View style={{ width: 1, backgroundColor: Colors.border }} />
+              <View style={{ alignItems: 'center' }}>
+                <Clock size={24} color={Colors.warning} />
+                <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.warning, marginTop: 8 }}>
+                  {pendingConnections.length}
+                </Text>
+                <Text style={{ fontSize: 12, color: Colors.textSecondary }}>Pending</Text>
+              </View>
+            </View>
+            
+            {/* Quick Invite Code Section */}
+            <View style={{ 
+              backgroundColor: '#F3F4F6', 
+              padding: 12, 
+              borderRadius: 12, 
+              marginBottom: 16,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <View>
+                <Text style={{ fontSize: 10, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Your Invite Code</Text>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: Colors.text }}>{profile?.invite_code || 'RCZ-NEW'}</Text>
+              </View>
+              <TouchableOpacity 
+                onPress={() => {
+                  if (profile?.invite_code) {
+                    Clipboard.setStringAsync(profile.invite_code);
+                    Alert.alert('Copied!', 'Invite code copied to clipboard');
+                  }
+                }}
+                style={{ backgroundColor: '#FFFFFF', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB' }}
+              >
+                <Copy size={16} color={Colors.primary} />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity 
+              style={{
+                backgroundColor: '#E0F2FE',
+                paddingVertical: 12,
+                borderRadius: 12,
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: 8,
+              }}
+              onPress={() => router.push('/collections/network' as any)}
+            >
+              <Plus size={18} color={Colors.primary} />
+              <Text style={{ color: Colors.primary, fontWeight: '700' }}>Manage Network</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Collection History</Text>
@@ -1004,7 +1103,7 @@ export default function CollectionsScreen() {
               ).map(([type, weight]) => (
                 <View key={type} style={styles.itemSummaryRow}>
                   <Text style={styles.itemSummaryType}>
-                    {prices.find((p: any) => p.type === type)?.label || type}
+                    {getPriceForType ? getPriceForType(type as any)?.label : type}
                   </Text>
                   <Text style={styles.itemSummaryWeight}>{(weight as number).toFixed(1)} kg</Text>
                 </View>

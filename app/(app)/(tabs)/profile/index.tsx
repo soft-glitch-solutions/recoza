@@ -31,12 +31,12 @@ import { useState } from 'react';
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user, logout, applyAsCollector, approveCollector } = useAuth();
+  const { user, profile, collectorApplication, signOut, applyAsCollector } = useAuth();
   
   // Safe destructuring with defaults
   const { 
-    collectorStats = { totalEarnings: 0, weeklyEarnings: 0, totalCollections: 0, householdsCount: 0 }, 
-    items = [] 
+    collectorStats = { totalEarnings: 0, weeklyEarnings: 0, totalCollections: 0, householdsCount: 0, totalWeight: 0 }, 
+    recyclableItems: items = [] 
   } = useRecyclables();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +53,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             setIsLoading(true);
             try {
-              await logout();
+              await signOut();
               router.replace('/login');
             } catch (error) {
               Alert.alert('Error', 'Failed to sign out');
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             setIsLoading(true);
             try {
-              await applyAsCollector();
+              await applyAsCollector('Keen to help my community recycle', 'My Local Area');
               Alert.alert(
                 'Application Submitted', 
                 'Your collector application is being reviewed. We\'ll notify you within 24-48 hours.'
@@ -94,29 +94,21 @@ export default function ProfileScreen() {
   };
 
   const handleApproveDemo = async () => {
-    setIsLoading(true);
-    try {
-      await approveCollector();
-      Alert.alert('Success!', 'You are now a collector. Start building your network!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to approve');
-    } finally {
-      setIsLoading(false);
-    }
+    Alert.alert('Demo', 'Admin backend connection needed to approve collectors.');
   };
 
   const handleCopyInviteCode = async () => {
-    if (user?.inviteCode) {
-      await Clipboard.setStringAsync(user.inviteCode);
+    if (profile?.invite_code) {
+      await Clipboard.setStringAsync(profile.invite_code);
       Alert.alert('Copied!', 'Invite code copied to clipboard');
     }
   };
 
   const handleShareInvite = async () => {
-    if (user?.inviteCode) {
+    if (profile?.invite_code) {
       try {
         await Share.share({
-          message: `♻️ Join me on Recoza and let's recycle together!\n\nUse my invite code: ${user.inviteCode}\n\nDownload Recoza to start earning from recycling and make South Africa greener.`,
+          message: `♻️ Join me on Recoza and let's recycle together!\n\nUse my invite code: ${profile.invite_code}\n\nDownload Recoza to start earning from recycling and make South Africa greener.`,
         });
       } catch (error) {
         console.log('Share error:', error);
@@ -125,21 +117,20 @@ export default function ProfileScreen() {
   };
 
   const getCollectorStatusBadge = () => {
-    switch (user?.collectorStatus) {
-      case 'pending':
-        return { icon: <Clock size={14} color="#F59E0B" />, text: 'Pending Review', color: '#F59E0B', bg: '#FEF3C7' };
-      case 'approved':
-        return { icon: <CheckCircle size={14} color="#10B981" />, text: 'Active Collector', color: '#10B981', bg: '#D1FAE5' };
-      default:
-        return null;
+    if (profile?.is_collector || profile?.collector_approved) {
+      return { icon: <CheckCircle size={14} color="#10B981" />, text: 'Active Collector', color: '#10B981', bg: '#D1FAE5' };
     }
+    if (collectorApplication?.status === 'pending') {
+      return { icon: <Clock size={14} color="#F59E0B" />, text: 'Pending Review', color: '#F59E0B', bg: '#FEF3C7' };
+    }
+    return null;
   };
 
   const statusBadge = getCollectorStatusBadge();
   
   // Safe calculations
   const totalItemsLogged = items?.length || 0;
-  const totalWeight = items?.reduce((sum, item) => {
+  const totalWeight = items?.reduce((sum: number, item: any) => {
     if (!item) return sum;
     const weight = item.unit === 'kg' ? item.quantity : item.quantity * 0.05;
     return sum + (weight || 0);
@@ -152,7 +143,7 @@ export default function ProfileScreen() {
         {
           icon: <User size={20} color={Colors.primary} />,
           label: 'Edit Profile',
-          onPress: () => router.push('../profile/edit'),
+          onPress: () => router.push('/profile/edit'),
           color: Colors.primary,
           bg: '#E0F2FE',
         },
@@ -167,7 +158,7 @@ export default function ProfileScreen() {
         {
           icon: <Shield size={20} color={Colors.primary} />,
           label: 'Privacy & Security',
-          onPress: () => router.push('../profile/privacy'),
+          onPress: () => router.push('/profile/privacy'),
           color: Colors.primary,
           bg: '#E0F2FE',
         },
@@ -180,7 +171,7 @@ export default function ProfileScreen() {
           icon: <Bell size={20} color="#F59E0B" />,
           label: 'Notifications',
           value: 'Manage alerts',
-          onPress: () => router.push('../profile/notifications'),
+          onPress: () => router.push('/profile/notifications'),
           color: '#F59E0B',
           bg: '#FEF3C7',
         },
@@ -201,7 +192,7 @@ export default function ProfileScreen() {
           icon: <HelpCircle size={20} color="#3B82F6" />,
           label: 'Help & Support',
           value: 'FAQs, contact us',
-          onPress: () => router.push('../profile/help'),
+          onPress: () => router.push('/profile/help'),
           color: '#3B82F6',
           bg: '#DBEAFE',
         },
@@ -244,7 +235,7 @@ export default function ProfileScreen() {
             style={styles.avatar}
           >
             <Text style={styles.avatarText}>
-              {user?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+              {profile?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
             </Text>
           </LinearGradient>
           {statusBadge && (
@@ -257,7 +248,7 @@ export default function ProfileScreen() {
           )}
         </View>
         
-        <Text style={styles.userName}>{user?.full_name || 'Recoza User'}</Text>
+        <Text style={styles.userName}>{profile?.full_name || 'Recoza User'}</Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
         
         {statusBadge && (
@@ -311,7 +302,7 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>kg Recycled</Text>
           </LinearGradient>
 
-          {user?.isCollector && (
+          {(profile?.is_collector || profile?.collector_approved) && (
             <LinearGradient
               colors={['#FFFFFF', '#F9FAFB']}
               style={styles.statsCard}
@@ -328,7 +319,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Invite Code Section for Collectors */}
-        {user?.isCollector && user?.inviteCode && (
+        {(profile?.is_collector || profile?.collector_approved) && profile?.invite_code && (
           <LinearGradient
             colors={['#FFFFFF', '#F9FAFB']}
             style={styles.inviteCard}
@@ -343,7 +334,7 @@ export default function ProfileScreen() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.inviteCode}>{user.inviteCode}</Text>
+                <Text style={styles.inviteCode}>{profile?.invite_code}</Text>
               </LinearGradient>
               <TouchableOpacity onPress={handleCopyInviteCode} style={styles.copyButton}>
                 <Copy size={20} color={Colors.primary} />
@@ -367,14 +358,14 @@ export default function ProfileScreen() {
         )}
 
         {/* Collector Application Section */}
-        {!user?.isCollector && (
+        {!(profile?.is_collector || profile?.collector_approved) && (
           <LinearGradient
             colors={['#FFFFFF', '#F9FAFB']}
             style={styles.menuCard}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            {user?.collectorStatus === 'none' ? (
+            {!collectorApplication || collectorApplication?.status === 'none' ? (
               <TouchableOpacity style={styles.collectorCard} onPress={handleApplyCollector}>
                 <LinearGradient
                   colors={['#F59E0B20', '#F59E0B10']}
@@ -390,7 +381,7 @@ export default function ProfileScreen() {
                 </View>
                 <ChevronRight size={20} color={Colors.textLight} />
               </TouchableOpacity>
-            ) : user?.collectorStatus === 'pending' ? (
+            ) : collectorApplication?.status === 'pending' ? (
               <View>
                 <View style={styles.collectorCard}>
                   <LinearGradient

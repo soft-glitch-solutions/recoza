@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
   Leaf, 
@@ -19,6 +19,7 @@ import { useRef, useEffect, useState } from 'react';
 import Colors from '@/constants/colors';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { SkeletonBlock, SkeletonList } from '@/components/Skeleton';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -40,28 +41,13 @@ interface Achievement {
 export default function ImpactScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { items = [], collectorStats = { totalCollections: 0, weeklyEarnings: 0, householdsCount: 0 } } = useRecyclables();
-  
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
+  const { items = [], collectorStats = { totalCollections: 0, weeklyEarnings: 0, householdsCount: 0 }, loading } = useRecyclables();
   
   const [streak, setStreak] = useState(0);
   const [weeklyWeight, setWeeklyWeight] = useState(0);
   const [totalWeight, setTotalWeight] = useState(0);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      })
-    ]).start();
 
     // Calculate stats safely
     if (items && items.length > 0) {
@@ -185,15 +171,15 @@ export default function ImpactScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Animated Background */}
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
+      {/* Background */}
+      <View style={[StyleSheet.absoluteFill]}>
         <LinearGradient
           colors={['#F0FDF4', '#F5F3FF']}
           style={StyleSheet.absoluteFill}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         />
-      </Animated.View>
+      </View>
 
       {/* Header - Now with more padding bottom to avoid overlap */}
       <LinearGradient
@@ -217,29 +203,32 @@ export default function ImpactScreen() {
             width: '100%',
           }
         ]}>
-          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          <View>
             <Text style={[styles.headerTitle, isDesktop && { fontSize: 36 }]}>
               Your Impact
             </Text>
             <Text style={[styles.headerSubtitle, isDesktop && { fontSize: 18 }]}>
               Making South Africa greener, one item at a time
             </Text>
-          </Animated.View>
+          </View>
         </View>
       </LinearGradient>
 
       {/* Main Stat Card - Now properly positioned */}
-      <Animated.View style={[
+      {loading ? (
+        <View style={{ paddingHorizontal: layout.paddingHorizontal, maxWidth: layout.contentMaxWidth, alignSelf: 'center', width: '100%', marginTop: -25, marginBottom: isDesktop ? 32 : 24 }}>
+          <SkeletonBlock height={140} borderRadius={28} />
+        </View>
+      ) : (
+      <View style={[
         styles.mainStatCardWrapper,
         {
           paddingHorizontal: layout.paddingHorizontal,
           maxWidth: layout.contentMaxWidth,
           alignSelf: 'center',
           width: '100%',
-          marginTop: -25, // Reduced negative margin
+          marginTop: -25,
           marginBottom: isDesktop ? 32 : 24,
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
         }
       ]}>
         <LinearGradient
@@ -285,8 +274,16 @@ export default function ImpactScreen() {
             </View>
           </View>
         </LinearGradient>
-      </Animated.View>
+      </View>
+      )}
 
+      {loading ? (
+        <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: layout.paddingHorizontal, maxWidth: layout.contentMaxWidth, alignSelf: 'center', width: '100%', gap: 24 }]}>
+          <SkeletonBlock height={140} borderRadius={16} />
+          <SkeletonBlock height={160} borderRadius={16} />
+          <SkeletonBlock height={120} borderRadius={16} />
+        </ScrollView>
+      ) : (
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -301,12 +298,14 @@ export default function ImpactScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Impact Grid */}
-        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-          <View style={[
-            styles.impactGrid,
-            isDesktop && { gap: 20, marginBottom: 40 }
-          ]}>
+        {isDesktop ? (
+          <View style={{ flexDirection: 'row', gap: 32 }}>
+            <View style={{ flex: 1, gap: 24 }}>
+              {/* Impact Grid */}
+              <View style={[
+                styles.impactGrid,
+                isDesktop && { gap: 20, marginBottom: 40 }
+              ]}>
             <LinearGradient
               colors={['#ECFDF5', '#D1FAE5']}
               style={[styles.impactCard, isDesktop && { padding: 24 }]}
@@ -360,6 +359,37 @@ export default function ImpactScreen() {
             </LinearGradient>
           </View>
 
+          {/* Weekly Goal */}
+          <View style={[styles.section, isDesktop && { marginBottom: 48 }]}>
+            <Text style={[styles.sectionTitle, isDesktop && { fontSize: 24, marginBottom: 20 }]}>
+              Weekly Goal
+            </Text>
+            <LinearGradient colors={['#FFFFFF', '#F9FAFB']} style={[styles.goalCard, isDesktop && { padding: 24, borderRadius: 20 }]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <View style={styles.goalHeader}>
+                <Target size={isDesktop ? 28 : 24} color={Colors.primary} />
+                <Text style={[styles.goalTitle, isDesktop && { fontSize: 18 }]}>
+                  Recycle 5kg this week
+                </Text>
+              </View>
+              <View style={styles.goalProgressContainer}>
+                <View style={[styles.goalProgressBar, isDesktop && { height: 12, borderRadius: 6 }]}>
+                  <LinearGradient colors={['#10B981', '#059669']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.goalProgressFill, { width: `${Math.min((weeklyWeight / 5) * 100, 100)}%` }, isDesktop && { borderRadius: 6 }]} />
+                </View>
+                <Text style={[styles.goalProgressText, isDesktop && { fontSize: 16, marginTop: 10 }]}>
+                  {weeklyWeight.toFixed(1)} / 5 kg
+                </Text>
+              </View>
+              <LinearGradient colors={['#FEF3C7', '#FDE68A']} style={[styles.goalRewardContainer, isDesktop && { padding: 14, borderRadius: 12 }]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <Sparkles size={16} color="#F59E0B" />
+                <Text style={[styles.goalReward, isDesktop && { fontSize: 15 }]}>
+                  {weeklyWeight >= 5 ? '🎉 Goal achieved! Great work!' : `${(5 - weeklyWeight).toFixed(1)}kg to go!`}
+                </Text>
+              </LinearGradient>
+            </LinearGradient>
+          </View>
+        </View>
+
+        <View style={{ flex: 1, gap: 24 }}>
           {/* Achievements Section */}
           <View style={[
             styles.section,
@@ -452,61 +482,97 @@ export default function ImpactScreen() {
               ))}
             </View>
           </View>
+          
+        </View>
+      </View>
+      ) : (
+      <View style={{ gap: 24 }}>
+          <View style={styles.impactGrid}>
+            <LinearGradient colors={['#ECFDF5', '#D1FAE5']} style={styles.impactCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <View style={[styles.impactIconContainer, { backgroundColor: '#10B981' }]}><Droplets size={20} color={Colors.white} /></View>
+              <Text style={styles.impactValue}>{waterSaved.toFixed(0)}L</Text>
+              <Text style={styles.impactLabel}>Water Saved</Text>
+            </LinearGradient>
+
+            <LinearGradient colors={['#F0F9FF', '#E0F2FE']} style={styles.impactCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <View style={[styles.impactIconContainer, { backgroundColor: '#0EA5E9' }]}><Globe size={20} color={Colors.white} /></View>
+              <Text style={styles.impactValue}>{co2Saved.toFixed(1)}kg</Text>
+              <Text style={styles.impactLabel}>CO₂ Prevented</Text>
+            </LinearGradient>
+
+            <LinearGradient colors={['#FEF3C7', '#FDE68A']} style={styles.impactCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <View style={[styles.impactIconContainer, { backgroundColor: '#F59E0B' }]}><Zap size={20} color={Colors.white} /></View>
+              <Text style={styles.impactValue}>{energySaved.toFixed(1)}kWh</Text>
+              <Text style={styles.impactLabel}>Energy Saved</Text>
+            </LinearGradient>
+
+            <LinearGradient colors={['#F0FDF4', '#DCFCE7']} style={styles.impactCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <View style={[styles.impactIconContainer, { backgroundColor: '#22C55E' }]}><TreePine size={20} color={Colors.white} /></View>
+              <Text style={styles.impactValue}>{treeEquivalent.toFixed(1)}</Text>
+              <Text style={styles.impactLabel}>Trees</Text>
+            </LinearGradient>
+          </View>
+
+          {/* Achievements Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Achievements</Text>
+              <LinearGradient colors={['#E0F2FE', '#BAE6FD']} style={styles.achievementCount} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <Award size={14} color={Colors.primary} />
+                <Text style={styles.achievementCountText}>{unlockedCount}/{achievements.length}</Text>
+              </LinearGradient>
+            </View>
+
+            <View style={styles.achievementsGrid}>
+              {achievements.map((achievement) => (
+                <LinearGradient key={achievement.id} colors={achievement.unlocked ? ['#FFFFFF', '#F9FAFB'] : ['#F3F4F6', '#E5E7EB']} style={styles.achievementCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                  <View style={styles.achievementRow}>
+                    <LinearGradient colors={achievement.unlocked ? achievement.gradient : ['#9CA3AF', '#6B7280']} style={styles.achievementIcon} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>{achievement.icon}</LinearGradient>
+                    <View style={styles.achievementContent}>
+                      <Text style={[styles.achievementTitle, !achievement.unlocked && styles.achievementTitleLocked]}>{achievement.title}</Text>
+                      <Text style={styles.achievementDescription}>{achievement.description}</Text>
+                    </View>
+                    {achievement.unlocked && (
+                      <LinearGradient colors={achievement.gradient} style={styles.unlockedBadge} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}><Text style={styles.unlockedBadgeText}>✓</Text></LinearGradient>
+                    )}
+                  </View>
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBar}>
+                      <LinearGradient colors={achievement.unlocked ? achievement.gradient : ['#9CA3AF', '#6B7280']} style={[styles.progressFill, { width: `${Math.min((achievement.current / achievement.requirement) * 100, 100)}%` }]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} />
+                    </View>
+                    <Text style={styles.progressText}>{achievement.current.toFixed(1)}/{achievement.requirement} {achievement.unit}</Text>
+                  </View>
+                </LinearGradient>
+              ))}
+            </View>
+          </View>
 
           {/* Weekly Goal */}
-          <View style={[
-            styles.section,
-            isDesktop && { marginBottom: 48 }
-          ]}>
-            <Text style={[styles.sectionTitle, isDesktop && { fontSize: 24, marginBottom: 20 }]}>
-              Weekly Goal
-            </Text>
-            <LinearGradient
-              colors={['#FFFFFF', '#F9FAFB']}
-              style={[styles.goalCard, isDesktop && { padding: 24, borderRadius: 20 }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Weekly Goal</Text>
+            <LinearGradient colors={['#FFFFFF', '#F9FAFB']} style={styles.goalCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
               <View style={styles.goalHeader}>
-                <Target size={isDesktop ? 28 : 24} color={Colors.primary} />
-                <Text style={[styles.goalTitle, isDesktop && { fontSize: 18 }]}>
-                  Recycle 5kg this week
-                </Text>
+                <Target size={24} color={Colors.primary} />
+                <Text style={styles.goalTitle}>Recycle 5kg this week</Text>
               </View>
               <View style={styles.goalProgressContainer}>
-                <View style={[styles.goalProgressBar, isDesktop && { height: 12, borderRadius: 6 }]}>
-                  <LinearGradient
-                    colors={['#10B981', '#059669']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={[
-                      styles.goalProgressFill,
-                      { width: `${Math.min((weeklyWeight / 5) * 100, 100)}%` },
-                      isDesktop && { borderRadius: 6 }
-                    ]}
-                  />
+                <View style={styles.goalProgressBar}>
+                  <LinearGradient colors={['#10B981', '#059669']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.goalProgressFill, { width: `${Math.min((weeklyWeight / 5) * 100, 100)}%` }]} />
                 </View>
-                <Text style={[styles.goalProgressText, isDesktop && { fontSize: 16, marginTop: 10 }]}>
-                  {weeklyWeight.toFixed(1)} / 5 kg
-                </Text>
+                <Text style={styles.goalProgressText}>{weeklyWeight.toFixed(1)} / 5 kg</Text>
               </View>
-              <LinearGradient
-                colors={['#FEF3C7', '#FDE68A']}
-                style={[styles.goalRewardContainer, isDesktop && { padding: 14, borderRadius: 12 }]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
+              <LinearGradient colors={['#FEF3C7', '#FDE68A']} style={styles.goalRewardContainer} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                 <Sparkles size={16} color="#F59E0B" />
-                <Text style={[styles.goalReward, isDesktop && { fontSize: 15 }]}>
-                  {weeklyWeight >= 5 ? '🎉 Goal achieved! Great work!' : `${(5 - weeklyWeight).toFixed(1)}kg to go!`}
-                </Text>
+                <Text style={styles.goalReward}>{weeklyWeight >= 5 ? '🎉 Goal achieved!' : `${(5 - weeklyWeight).toFixed(1)}kg to go!`}</Text>
               </LinearGradient>
             </LinearGradient>
           </View>
-        </Animated.View>
+        </View>
+        )}
 
         <View style={{ height: isDesktop ? 100 : 80 }} />
       </ScrollView>
+      )}
     </View>
   );
 }

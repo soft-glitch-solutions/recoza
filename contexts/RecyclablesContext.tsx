@@ -143,11 +143,22 @@ export function RecyclablesProvider({ children }: { children: React.ReactNode })
           collector:collector_id(*)
         `)
         .or(`collector_id.eq.${user.id},household_id.eq.${user.id}`)
-        .eq('status', 'active');
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      setHouseholdConnections(data || []);
+      // Map the response to the HouseholdConnection interface
+      const mappedData = (data || []).map((conn: any) => ({
+        id: conn.id,
+        householdId: conn.household_id,
+        householdName: conn.household?.full_name || 'Unknown Household',
+        householdEmail: conn.household?.email || 'No Email',
+        connectedAt: conn.created_at || conn.connected_at,
+        totalItemsLogged: conn.total_items_logged || 0,
+        status: conn.status,
+      }));
+      
+      setHouseholdConnections(mappedData);
     } catch (err: any) {
       console.error('Error fetching household connections:', err);
       setError(err.message);

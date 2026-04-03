@@ -8,9 +8,9 @@ import { Header } from '@/components/home/Header';
 import { StatsCard } from '@/components/home/StatsCard';
 import { QuickLogSection } from '@/components/home/QuickLogSection';
 import { UpcomingCollections } from '@/components/home/UpcomingCollections';
-import { WeeklyItems } from '@/components/home/WeeklyItems';
 import { RecentActivity } from '@/components/home/RecentActivity';
 import { TabletImpactSection } from '@/components/home/TabletImpactSection';
+import { SkeletonBlock, SkeletonList } from '@/components/Skeleton';
 
 const { width, height } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -202,15 +202,6 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Header isDesktop={isDesktop} scale={scale} layout={layout} />
-      
-      <StatsCard 
-        weeklyStats={weeklyStats}
-        impactStats={impactStats}
-        isCollector={isCollector}
-        isDesktop={isDesktop}
-        scale={scale}
-        layout={layout}
-      />
 
       <ScrollView
         style={styles.scrollView}
@@ -234,47 +225,112 @@ export default function HomeScreen() {
           />
         }
       >
-        <QuickLogSection 
-          recyclableTypes={RECYCLABLE_TYPES}
-          isDesktop={isDesktop}
-          scale={scale}
-        />
+        {isDesktop ? (
+          // Desktop 2-Column Layout
+          <View style={styles.desktopGrid}>
+            <View style={{ flex: 1, gap: 24 }}>
+              <QuickLogSection isDesktop={isDesktop} scale={scale} />
+              
+              <View style={{ width: '100%' }}>
+                <Text style={{ marginBottom: 16, fontSize: scale(24), fontWeight: '700', color: Colors.text }}>
+                  Your Impact Overview
+                </Text>
+                {loading ? (
+                  <SkeletonBlock height={160} />
+                ) : (
+                  <StatsCard 
+                    weeklyStats={weeklyStats}
+                    impactStats={impactStats}
+                    isCollector={isCollector}
+                    isDesktop={isDesktop}
+                    scale={scale}
+                    layout={{ paddingHorizontal: 0, contentMaxWidth: '100%' }}
+                  />
+                )}
+              </View>
+            </View>
 
-        {isCollector && (
-          <UpcomingCollections 
-            collections={upcomingCollections}
-            isDesktop={isDesktop}
-            scale={scale}
-          />
-        )}
+            <View style={{ flex: 1, gap: 24 }}>
+              {isCollector && (
+                <UpcomingCollections 
+                  collections={upcomingCollections}
+                  isDesktop={isDesktop}
+                  scale={scale}
+                />
+              )}
+              
+              {loading ? (
+                <View style={{ marginTop: 0 }}>
+                  <Text style={{ fontSize: scale(20), fontWeight: '700', color: Colors.text, marginBottom: 16 }}>Recent Activity</Text>
+                  <SkeletonList count={4} height={70} />
+                </View>
+              ) : (
+                <RecentActivity 
+                  items={items}
+                  recentLogs={recentLogs}
+                  getIcon={getIcon}
+                  getLabel={getLabel}
+                  getColor={getColor}
+                  formatDate={formatDate}
+                  isDesktop={isDesktop}
+                  scale={scale}
+                />
+              )}
+            </View>
+          </View>
+        ) : (
+          // Mobile Stacked Layout
+          <View style={{ gap: 24 }}>
+            <QuickLogSection isDesktop={false} scale={scale} />
 
-        <View style={isDesktop && styles.desktopGrid}>
-          <WeeklyItems 
-            items={weeklyItems}
-            weeklyItems={weeklyItems}
-            getIcon={getIcon}
-            getLabel={getLabel}
-            getColor={getColor}
-            formatDate={formatDate}
-            onDelete={handleDeleteItem}
-            isDesktop={isDesktop}
-            scale={scale}
-          />
+            {isCollector && (
+              <UpcomingCollections 
+                collections={upcomingCollections}
+                isDesktop={false}
+                scale={scale}
+              />
+            )}
 
-          <RecentActivity 
-            items={items}
-            recentLogs={recentLogs}
-            getIcon={getIcon}
-            getLabel={getLabel}
-            getColor={getColor}
-            formatDate={formatDate}
-            isDesktop={isDesktop}
-            scale={scale}
-          />
-        </View>
+            {loading ? (
+              <View style={{ marginTop: 0 }}>
+                <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.text, marginBottom: 16 }}>Recent Activity</Text>
+                <SkeletonList count={4} height={70} />
+              </View>
+            ) : (
+              <RecentActivity 
+                items={items}
+                recentLogs={recentLogs}
+                getIcon={getIcon}
+                getLabel={getLabel}
+                getColor={getColor}
+                formatDate={formatDate}
+                isDesktop={false}
+                scale={scale}
+              />
+            )}
 
-        {isTablet && !isDesktop && (
-          <TabletImpactSection impactStats={impactStats} />
+            {isTablet && (
+              <TabletImpactSection impactStats={impactStats} />
+            )}
+
+            <View style={{ width: '100%' }}>
+              <Text style={{ marginBottom: 16, fontSize: 20, fontWeight: '700', color: Colors.text }}>
+                Your Impact Overview
+              </Text>
+              {loading ? (
+                <SkeletonBlock height={160} />
+              ) : (
+                <StatsCard 
+                  weeklyStats={weeklyStats}
+                  impactStats={impactStats}
+                  isCollector={isCollector}
+                  isDesktop={false}
+                  scale={scale}
+                  layout={{ paddingHorizontal: 0, contentMaxWidth: '100%' }}
+                />
+              )}
+            </View>
+          </View>
         )}
       </ScrollView>
     </View>
@@ -291,7 +347,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     width: '100%',
-    paddingTop: 0,
+    paddingTop: 24,
   },
   desktopGrid: {
     flexDirection: 'row',

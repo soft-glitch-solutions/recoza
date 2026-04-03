@@ -103,9 +103,6 @@ export default function LogItemScreen() {
   // Check if user is a collector
   const isCollector = user?.is_collector === true;
 
-  const [selectedCategory, setSelectedCategory] = useState<RecyclableType | null>(
-    preselectedType as RecyclableType || null
-  );
   const [selectedItem, setSelectedItem] = useState<typeof COMMON_ITEMS[0] | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -213,77 +210,53 @@ export default function LogItemScreen() {
       >
         {!selectedItem ? (
           // Category Selection
+          // Direct Item Selection Array
           <>
-            <Text style={styles.sectionTitle}>Choose a category</Text>
-            <View style={styles.categoryGrid}>
-              {(['plastic', 'metal', 'glass', 'paper', 'cardboard'] as RecyclableType[]).map((type) => (
+            <Text style={styles.sectionTitle}>Tap what you have</Text>
+            <View style={styles.itemsList}>
+              {COMMON_ITEMS.map((item) => (
                 <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.categoryCard,
-                    selectedCategory === type && styles.categoryCardSelected,
-                    { borderColor: selectedCategory === type ? getCategoryColor(type) : Colors.border }
-                  ]}
-                  onPress={() => setSelectedCategory(type)}
+                  key={item.id}
+                  style={styles.itemCard}
+                  onPress={() => setSelectedItem(item)}
                 >
-                  <View style={[styles.categoryIcon, { backgroundColor: getCategoryColor(type) + '20' }]}>
-                    <Text style={styles.categoryEmoji}>{getCategoryIcon(type)}</Text>
+                  <View style={[styles.itemIcon, { backgroundColor: item.color + '20' }]}>
+                    <Text style={styles.itemEmoji}>{item.icon}</Text>
                   </View>
-                  <Text style={styles.categoryLabel}>{type.charAt(0).toUpperCase() + type.slice(1)}</Text>
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemDetails}>
+                      ~{item.weightKg}kg each
+                    </Text>
+                  </View>
                   <ChevronRight size={20} color={Colors.textSecondary} />
                 </TouchableOpacity>
               ))}
-            </View>
 
-            {selectedCategory && (
-              <>
-                <Text style={styles.sectionTitle}>What exactly do you have?</Text>
-                <View style={styles.itemsList}>
-                  {ITEMS_BY_TYPE[selectedCategory].map((item) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={styles.itemCard}
-                      onPress={() => setSelectedItem(item)}
-                    >
-                      <View style={[styles.itemIcon, { backgroundColor: item.color + '20' }]}>
-                        <Text style={styles.itemEmoji}>{item.icon}</Text>
-                      </View>
-                      <View style={styles.itemInfo}>
-                        <Text style={styles.itemName}>{item.name}</Text>
-                        <Text style={styles.itemDetails}>
-                          ~{item.weightKg}kg each
-                        </Text>
-                      </View>
-                      <ChevronRight size={20} color={Colors.textSecondary} />
-                    </TouchableOpacity>
-                  ))}
-
-                  {/* Custom Item Option */}
-                  <TouchableOpacity 
-                    style={styles.customItemCard}
-                    onPress={() => {
-                      Alert.alert(
-                        'Custom Item',
-                        'Please describe your item and approximate weight',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          { text: 'OK', onPress: () => setShowCustom(true) }
-                        ]
-                      );
-                    }}
-                  >
-                    <View style={[styles.itemIcon, { backgroundColor: Colors.primary + '20' }]}>
-                      <Text style={styles.itemEmoji}>➕</Text>
-                    </View>
-                    <View style={styles.itemInfo}>
-                      <Text style={styles.itemName}>Other Item</Text>
-                      <Text style={styles.itemDetails}>Tap to describe</Text>
-                    </View>
-                    <ChevronRight size={20} color={Colors.textSecondary} />
-                  </TouchableOpacity>
+              {/* Custom Item Option */}
+              <TouchableOpacity 
+                style={styles.customItemCard}
+                onPress={() => {
+                  Alert.alert(
+                    'Custom Item',
+                    'Please describe your item and approximate weight',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'OK', onPress: () => setShowCustom(true) }
+                    ]
+                  );
+                }}
+              >
+                <View style={[styles.itemIcon, { backgroundColor: Colors.primary + '20' }]}>
+                  <Text style={styles.itemEmoji}>➕</Text>
                 </View>
-              </>
-            )}
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName}>Other Item</Text>
+                  <Text style={styles.itemDetails}>Tap to describe</Text>
+                </View>
+                <ChevronRight size={20} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </>
         ) : (
           // Quantity Selection
@@ -369,17 +342,7 @@ export default function LogItemScreen() {
       </ScrollView>
 
       {/* Bottom Button for when no item selected */}
-      {!selectedItem && selectedCategory && (
-        <View style={[styles.bottomButton, { paddingBottom: insets.bottom + 16 }]}>
-          <TouchableOpacity 
-            style={[styles.submitButton, (!selectedCategory) && styles.submitButtonDisabled]}
-            onPress={() => setSelectedItem(ITEMS_BY_TYPE[selectedCategory][0])}
-            disabled={!selectedCategory}
-          >
-            <Text style={styles.submitButtonText}>Continue</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+
     </View>
   );
 }

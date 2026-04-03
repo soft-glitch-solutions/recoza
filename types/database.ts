@@ -178,6 +178,32 @@ export interface Database {
           created_at?: string;
         };
       };
+      household_connections: {
+        Row: {
+          id: string;
+          collector_id: string;
+          household_id: string;
+          status: 'pending' | 'active' | 'inactive' | 'disconnected';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          collector_id: string;
+          household_id: string;
+          status?: 'pending' | 'active' | 'inactive' | 'disconnected';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          collector_id?: string;
+          household_id?: string;
+          status?: 'pending' | 'active' | 'inactive' | 'disconnected';
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }

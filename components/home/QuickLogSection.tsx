@@ -1,87 +1,81 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { Recycle } from 'lucide-react-native';
 import Colors from '@/constants/colors';
+import { useRecyclables } from '@/contexts/RecyclablesContext';
 
 interface QuickLogSectionProps {
-  recyclableTypes: Array<{
-    type: string;
-    label: string;
-    emoji: string;
-    color: string;
-  }>;
   isDesktop?: boolean;
   scale?: (size: number) => number;
 }
 
 export const QuickLogSection: React.FC<QuickLogSectionProps> = ({
-  recyclableTypes,
   isDesktop = false,
   scale = (size) => size
 }) => {
-  const router = useRouter();
+  const { addRecyclableItem } = useRecyclables();
+  const [loading, setLoading] = useState(false);
+
+  const handleQuickLog = async () => {
+    setLoading(true);
+    try {
+      const result = await addRecyclableItem({
+        type: 'plastic', 
+        quantity: 1,
+        unit: 'items',
+        userId: 'temp', // Addressed behind the scenes in context
+        loggedAt: new Date().toISOString(),
+        collected: false,
+      });
+
+      if (!result.success) {
+        Alert.alert('Error', result.error || 'Failed to log item');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, isDesktop && { fontSize: scale(24) }]}>
-          What are you recycling?
-        </Text>
-        <Text style={[styles.quickLogHint, isDesktop && { fontSize: scale(14) }]}>
-          Tap to log
-        </Text>
-      </View>
+      <Text style={[styles.sectionTitle, isDesktop && { fontSize: scale(20) }]}>
+        Quick Log
+      </Text>
       
-      <View style={styles.quickLogGrid}>
-        {recyclableTypes.map((item) => (
-          <TouchableOpacity
-            key={item.type}
-            style={[
-              styles.quickLogCard,
-              isDesktop && { 
-                padding: scale(16),
-                borderRadius: scale(20),
-              }
-            ]}
-            onPress={() => router.push({
-              pathname: '/(tabs)/(home)/log-item',
-              params: { type: item.type }
-            })}
-          >
-            <LinearGradient
-              colors={[item.color + '20', item.color + '10']}
-              style={[
-                styles.quickLogIconLarge,
-                { 
-                  width: isDesktop ? scale(80) : 64,
-                  height: isDesktop ? scale(80) : 64,
-                  borderRadius: isDesktop ? scale(24) : 20,
-                }
-              ]}
-            >
-              <Text style={[
-                styles.quickLogEmojiLarge,
-                isDesktop && { fontSize: scale(40) }
-              ]}>
-                {item.emoji}
-              </Text>
-            </LinearGradient>
-            <Text style={[
-              styles.quickLogLabelLarge,
-              isDesktop && { fontSize: scale(18), marginTop: scale(12) }
-            ]}>
-              {item.label}
-            </Text>
-            <Text style={[
-              styles.quickLogTap,
-              isDesktop && { fontSize: scale(14) }
-            ]}>
-              Tap to add →
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={handleQuickLog}
+        disabled={loading}
+        style={styles.buttonWrapper}
+      >
+        <LinearGradient
+          colors={['#10B981', '#059669']} // Beautiful emerald green
+          style={[styles.giantButton, isDesktop && { paddingVertical: 32 }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          {loading ? (
+            <ActivityIndicator color="#ffffff" size="large" />
+          ) : (
+            <View style={styles.buttonContent}>
+              <View style={styles.iconContainer}>
+                <Recycle size={isDesktop ? scale(48) : 36} color="#059669" />
+              </View>
+              <View style={styles.textContainer}>
+                <Text style={[styles.buttonPrimaryText, isDesktop && { fontSize: scale(24) }]}>
+                  Log 1 Item
+                </Text>
+                <Text style={[styles.buttonSecondaryText, isDesktop && { fontSize: scale(16) }]}>
+                  Tap to securely log an item
+                </Text>
+              </View>
+            </View>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -89,60 +83,59 @@ export const QuickLogSection: React.FC<QuickLogSectionProps> = ({
 const styles = StyleSheet.create({
   section: {
     marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+    width: '100%',
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: Colors.text,
+    marginBottom: 16,
   },
-  quickLogHint: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
-  },
-  quickLogGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  quickLogCard: {
-    width: '48%',
-    backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: Colors.black,
+  buttonWrapper: {
+    width: '100%',
+    shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    elevation: 8,
   },
-  quickLogIconLarge: {
+  giantButton: {
+    width: '100%',
+    borderRadius: 24,
+    padding: 24,
+    minHeight: 120,
+    justifyContent: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  quickLogEmojiLarge: {
-    fontSize: 36,
+  textContainer: {
+    flex: 1,
   },
-  quickLogLabelLarge: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
+  buttonPrimaryText: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: '800',
     marginBottom: 4,
   },
-  quickLogTap: {
-    fontSize: 12,
-    color: Colors.primary,
+  buttonSecondaryText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
     fontWeight: '500',
   },
 });

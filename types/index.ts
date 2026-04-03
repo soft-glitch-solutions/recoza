@@ -59,4 +59,5 @@ export interface HouseholdConnection {
   householdEmail: string;
   connectedAt: string;
   totalItemsLogged: number;
+  status?: 'active' | 'pending' | 'inactive' | 'disconnected';
 }

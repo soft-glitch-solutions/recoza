@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, RefreshControl, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, RefreshControl, Linking, Share, Alert } from 'react-native';
 import { useState, useCallback, useEffect } from 'react';
 import { 
   Users, 
@@ -31,16 +31,7 @@ import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
 
-// Types
-interface HouseholdConnection {
-  id: string;
-  householdId: string;
-  householdName: string;
-  householdEmail: string;
-  connectedAt: string;
-  totalItemsLogged: number;
-  status?: 'active' | 'inactive';
-}
+import { HouseholdConnection } from '@/types';
 
 interface PendingInvite {
   id: string;
@@ -53,25 +44,7 @@ interface PendingInvite {
   acceptedAt?: string;
 }
 
-// Mock data for pending invitations
-const mockPendingInvites: PendingInvite[] = [
-  {
-    id: 'inv1',
-    name: 'John Doe',
-    inviteCode: 'RCZ-X7K9M2',
-    inviteLink: 'https://mobile.recoza.co.za/join/RCZ-X7K9M2',
-    status: 'pending',
-    sentAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'inv2',
-    name: 'Jane Smith',
-    inviteCode: 'RCZ-PL4Q8N',
-    inviteLink: 'https://mobile.recoza.co.za/join/RCZ-PL4Q8N',
-    status: 'pending',
-    sentAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+// Real data will be fetched from context
 
 export default function NetworkScreen() {
   const insets = useSafeAreaInsets();
@@ -79,7 +52,10 @@ export default function NetworkScreen() {
   
   // Safely get households with default empty array
   const recyclablesContext = useRecyclables() || {};
-  const { households = [], scheduleCollection = () => {} } = recyclablesContext;
+  const { 
+    householdConnections = [], 
+    createCollection 
+  } = recyclablesContext;
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -92,50 +68,32 @@ export default function NetworkScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'connected' | 'pending'>('connected');
   const [customLink, setCustomLink] = useState('');
-  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>(mockPendingInvites);
+  
+  const pendingInvitesFromDb: PendingInvite[] = householdConnections
+    .filter(c => c.status === 'pending')
+    .map(c => ({
+      id: c.id,
+      name: c.householdName,
+      inviteCode: profile?.invite_code || '',
+      inviteLink: `https://recoza.app/join/${profile?.invite_code}`,
+      status: 'pending',
+      sentAt: c.connectedAt,
+    }));
+
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  
+  useEffect(() => {
+    setPendingInvites(pendingInvitesFromDb);
+  }, [householdConnections]);
+
   const [selectedInvite, setSelectedInvite] = useState<PendingInvite | null>(null);
   const [selectedHousehold, setSelectedHousehold] = useState<HouseholdConnection | null>(null);
   const [modalMessage, setModalMessage] = useState('');
   const [modalTitle, setModalTitle] = useState('');
   
-  // Mock connected households
-  const [mockHouseholds] = useState<HouseholdConnection[]>([
-    {
-      id: '1',
-      householdId: 'h1',
-      householdName: 'Thabo Mokoena',
-      householdEmail: 'thabo@example.com',
-      connectedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      totalItemsLogged: 15,
-      status: 'active',
-    },
-    {
-      id: '2',
-      householdId: 'h2',
-      householdName: 'Naledi Sithole',
-      householdEmail: 'naledi@example.com',
-      connectedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-      totalItemsLogged: 23,
-      status: 'active',
-    },
-    {
-      id: '3',
-      householdId: 'h3',
-      householdName: 'Sipho Dlamini',
-      householdEmail: 'sipho@example.com',
-      connectedAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
-      totalItemsLogged: 8,
-      status: 'active',
-    },
-  ]);
+  const activeHouseholds = householdConnections.filter(c => c.status === 'active');
 
-  // Ensure both arrays are iterable
-  const allHouseholds = [
-    ...(Array.isArray(mockHouseholds) ? mockHouseholds : []),
-    ...(Array.isArray(households) ? households : [])
-  ];
-
-  const filteredHouseholds = allHouseholds.filter((h: HouseholdConnection) => 
+  const filteredHouseholds = activeHouseholds.filter((h: HouseholdConnection) => 
     h && 
     (h.householdName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     h.householdEmail?.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -273,7 +231,18 @@ export default function NetworkScreen() {
       () => {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        scheduleCollection(household.householdId, household.householdName, tomorrow.toISOString(), []);
+        if (createCollection) {
+          createCollection({
+            collectorId: user?.id || '',
+            householdId: household.householdId,
+            householdName: household.householdName,
+            scheduledDate: tomorrow.toISOString(),
+            status: 'scheduled',
+            items: [],
+            totalWeight: 0,
+            estimatedEarnings: 0
+          });
+        }
         showSuccess(
           'Collection Scheduled! 📅',
           `Collection from ${household.householdName} has been scheduled for tomorrow`
@@ -290,7 +259,7 @@ export default function NetworkScreen() {
   };
 
   // Calculate total items safely
-  const totalItemsLogged = allHouseholds.reduce((sum: number, h: HouseholdConnection) => {
+  const totalItemsLogged = activeHouseholds.reduce((sum, h) => {
     return sum + (h?.totalItemsLogged || 0);
   }, 0);
 
@@ -425,7 +394,7 @@ export default function NetworkScreen() {
     return handler;
   };
 
-  if (!user?.isCollector) {
+  if (!profile?.is_collector) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.notCollector}>
@@ -495,7 +464,7 @@ export default function NetworkScreen() {
         >
           <Users size={18} color={activeTab === 'connected' ? Colors.primary : Colors.textSecondary} />
           <Text style={[styles.tabText, activeTab === 'connected' && styles.activeTabText]}>
-            Connected ({allHouseholds.length})
+            Connected ({activeHouseholds.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -526,7 +495,7 @@ export default function NetworkScreen() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.statValue}>{allHouseholds.length}</Text>
+                <Text style={styles.statValue}>{activeHouseholds.length}</Text>
                 <Text style={styles.statLabel}>Households</Text>
               </LinearGradient>
               <LinearGradient
