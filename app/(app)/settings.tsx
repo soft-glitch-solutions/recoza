@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
-import { 
-  ArrowLeft, 
-  Bell, 
-  Lock, 
-  Eye, 
-  Trash2, 
-  Smartphone, 
-  Moon, 
-  Globe, 
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Platform } from 'react-native';
+import {
+  ArrowLeft,
+  Bell,
+  Lock,
+  Eye,
+  Trash2,
+  Smartphone,
+  Moon,
+  Globe,
   Shield,
   ChevronRight
 } from 'lucide-react-native';
@@ -22,7 +22,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark, toggleTheme } = useTheme();
   const { signOut, user } = useAuth();
-  
+
   const [notifications, setNotifications] = useState(true);
   const [biometrics, setBiometrics] = useState(false);
   const [marketing, setMarketing] = useState(false);
@@ -44,7 +44,7 @@ export default function SettingsScreen() {
         <Icon size={20} color={color} />
       </View>
       <Text style={[styles.settingLabel, { color: colors.text }]}>{label}</Text>
-      
+
       {type === 'toggle' ? (
         <Switch
           value={value}
@@ -71,24 +71,24 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>APP PREFERENCES</Text>
           <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <SettingItem 
-              icon={Moon} 
-              label="Dark Mode" 
-              value={isDark} 
-              onValueChange={toggleTheme} 
+            <SettingItem
+              icon={Moon}
+              label="Dark Mode"
+              value={isDark}
+              onValueChange={toggleTheme}
               color={colors.secondary}
             />
-            <SettingItem 
-              icon={Bell} 
-              label="Push Notifications" 
-              value={notifications} 
-              onValueChange={setNotifications} 
+            <SettingItem
+              icon={Bell}
+              label="Push Notifications"
+              value={notifications}
+              onValueChange={setNotifications}
               color={colors.primary}
             />
-            <SettingItem 
-              icon={Globe} 
-              label="Language" 
-              type="link" 
+            <SettingItem
+              icon={Globe}
+              label="Language"
+              type="link"
               color={colors.info}
             />
           </View>
@@ -97,23 +97,23 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>SECURITY & PRIVACY</Text>
           <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <SettingItem 
-              icon={Smartphone} 
-              label="Biometric Login" 
-              value={biometrics} 
-              onValueChange={setBiometrics} 
+            <SettingItem
+              icon={Smartphone}
+              label="Biometric Login"
+              value={biometrics}
+              onValueChange={setBiometrics}
               color={colors.primary}
             />
-            <SettingItem 
-              icon={Lock} 
-              label="Privacy Settings" 
-              type="link" 
+            <SettingItem
+              icon={Lock}
+              label="Privacy Settings"
+              type="link"
               color={colors.accent}
             />
-            <SettingItem 
-              icon={Shield} 
-              label="Terms of Service" 
-              type="link" 
+            <SettingItem
+              icon={Shield}
+              label="Terms of Service"
+              type="link"
               color={colors.textLight}
             />
           </View>
@@ -122,14 +122,14 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ACCOUNT ACTIONS</Text>
           <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.actionItem, { borderBottomWidth: 1, borderBottomColor: colors.borderLight }]}
               onPress={signOut}
             >
               <Trash2 size={20} color="#EF4444" />
               <Text style={styles.logoutText}>Sign Out</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionItem}
               onPress={handleDeleteAccount}
             >
@@ -163,6 +163,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   headerTitle: {
     fontSize: 24,
@@ -182,14 +184,16 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 3,
+    borderColor: '#000000',
     overflow: 'hidden',
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 3,
+    borderColor: '#000000',
   },
   iconContainer: {
     width: 40,
@@ -198,6 +202,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    borderWidth: 2,
+    borderColor: '#000000',
   },
   settingLabel: {
     flex: 1,
@@ -209,6 +215,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 18,
     gap: 16,
+    borderBottomWidth: 3,
+    borderColor: '#000000',
   },
   logoutText: {
     fontSize: 16,

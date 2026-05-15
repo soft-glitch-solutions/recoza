@@ -75,8 +75,7 @@ export default function DropOffScreen() {
             Find the nearest location to exchange your collected items.
           </Text>
         </View>
-
-        <View style={[styles.searchBar, { backgroundColor: colors.surfaceSecondary }]}>
+        <View style={[styles.searchBar, { backgroundColor: colors.surfaceSecondary, borderWidth: 3, borderColor: '#000000' }]}>
           <Search size={20} color={colors.textSecondary} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
@@ -86,18 +85,17 @@ export default function DropOffScreen() {
             onChangeText={setSearchQuery}
           />
         </View>
-
         <ScrollView 
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         >
           {filteredSpots.map((spot) => (
-            <View key={spot.id} style={[styles.spotCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <View key={spot.id} style={[styles.spotCard, { backgroundColor: colors.surface, borderColor: '#000000', borderWidth: 3 }]}>
               <View style={styles.spotHeader}>
                 <View style={styles.spotTitleRow}>
                   <Text style={[styles.spotName, { color: colors.text }]}>{spot.name}</Text>
                   {spot.distance && (
-                    <View style={[styles.distanceBadge, { backgroundColor: colors.accent + '20' }]}>
+                    <View style={[styles.distanceBadge, { backgroundColor: colors.accent, borderWidth: 2, borderColor: '#000000' }]}>
                       <Text style={[styles.distanceText, { color: colors.primary }]}>{spot.distance}</Text>
                     </View>
                   )}
@@ -107,7 +105,6 @@ export default function DropOffScreen() {
                   <Text style={[styles.addressText, { color: colors.textSecondary }]}>{spot.address}</Text>
                 </View>
               </View>
-
               <View style={styles.infoGrid}>
                 <View style={styles.infoItem}>
                   <Clock size={16} color={colors.primary} />
@@ -118,25 +115,23 @@ export default function DropOffScreen() {
                   <Text style={[styles.infoText, { color: colors.text }]}>{spot.phone}</Text>
                 </View>
               </View>
-
               <View style={styles.typesContainer}>
                 {spot.types.map((type, index) => (
-                  <View key={index} style={[styles.typeBadge, { backgroundColor: colors.surfaceSecondary }]}>
+                  <View key={index} style={[styles.typeBadge, { backgroundColor: colors.surfaceSecondary, borderWidth: 2, borderColor: '#000000' }]}>
                     <Text style={[styles.typeText, { color: colors.textSecondary }]}>{type}</Text>
                   </View>
                 ))}
               </View>
-
               <View style={styles.actionRow}>
                 <TouchableOpacity 
-                  style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                  style={[styles.actionButton, { backgroundColor: colors.primary, borderWidth: 3, borderColor: '#000000' }]}
                   onPress={() => handleGetDirections(spot.address)}
                 >
                   <Navigation size={18} color="#fff" />
                   <Text style={styles.actionButtonText}>Directions</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={[styles.secondaryButton, { borderColor: colors.border }]}
+                  style={[styles.secondaryButton, { borderColor: '#000000', borderWidth: 3 }]}
                   onPress={() => Linking.openURL(spot.website)}
                 >
                   <Globe size={18} color={colors.primary} />
@@ -144,7 +139,6 @@ export default function DropOffScreen() {
               </View>
             </View>
           ))}
-
           {filteredSpots.length === 0 && (
             <View style={styles.emptyState}>
               <Info size={48} color={colors.textLight} />
@@ -171,13 +165,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+    fontWeight: '900',
+    letterSpacing: -1.5,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
     marginTop: 4,
     lineHeight: 20,
+    fontWeight: '500',
   },
   searchBar: {
     flexDirection: 'row',
@@ -190,13 +185,13 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     marginLeft: 12,
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '600',
   },
   spotCard: {
     borderRadius: 24,
     padding: 20,
     marginBottom: 16,
-    borderWidth: 1,
   },
   spotHeader: {
     marginBottom: 16,
@@ -208,9 +203,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   spotName: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '900',
     flex: 1,
+    letterSpacing: -0.5,
   },
   distanceBadge: {
     paddingHorizontal: 10,
@@ -220,7 +216,7 @@ const styles = StyleSheet.create({
   },
   distanceText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   addressRow: {
     flexDirection: 'row',
@@ -230,19 +226,20 @@ const styles = StyleSheet.create({
   addressText: {
     fontSize: 14,
     flex: 1,
+    fontWeight: '500',
   },
   infoGrid: {
-    gap: 12,
+    gap: 10,
     marginBottom: 16,
   },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   infoText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '700',
   },
   typesContainer: {
     flexDirection: 'row',
@@ -251,13 +248,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   typeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   typeText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   actionRow: {
     flexDirection: 'row',
@@ -269,19 +267,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    height: 48,
-    borderRadius: 14,
+    height: 52,
+    borderRadius: 16,
   },
   actionButtonText: {
     color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '900',
   },
   secondaryButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    borderWidth: 1,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -293,5 +290,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     textAlign: 'center',
+    fontWeight: '600',
   },
 });

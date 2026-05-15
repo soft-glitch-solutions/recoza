@@ -24,25 +24,32 @@ import {
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
-const faqs = [
+const faqsData = [
   {
+    id: 'collector-apply',
     question: 'How do I become a collector?',
     answer: 'Go to your profile and tap on "Become a Collector". Fill out the application form and wait for approval (usually 24-48 hours).',
   },
   {
+    id: 'logging',
     question: 'How do I log recyclable items?',
     answer: 'On the home screen, tap on the recyclable type you want to log (plastic, paper, etc.). Enter the quantity and confirm.',
   },
   {
+    id: 'payouts',
     question: 'When do I get paid as a collector?',
     answer: 'Payouts are processed weekly on Fridays for all completed collections from the previous week.',
   },
   {
+    id: 'connect',
     question: 'How do I connect with households?',
     answer: 'Share your unique invite code with neighbors. They can enter it during signup to connect with you as their collector.',
   },
   {
+    id: 'items',
     question: 'What items can be recycled?',
     answer: 'We accept plastic bottles, glass bottles, metal cans, paper, cardboard, and magazines. Make sure items are clean and dry.',
   },
@@ -51,8 +58,17 @@ const faqs = [
 export default function HelpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { profile } = useAuth();
+  const { colors } = useTheme();
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [message, setMessage] = useState('');
+
+  const isCollector = profile?.is_collector || profile?.collector_approved || false;
+
+  const faqs = faqsData.filter(faq => {
+    if (isCollector && faq.id === 'collector-apply') return false;
+    return true;
+  });
 
   const toggleFaq = (index: number) => {
     setExpandedFaq(expandedFaq === index ? null : index);

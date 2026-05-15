@@ -129,7 +129,13 @@ export const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
 
           <View style={styles.menuContent}>
             <MenuItem icon={Home} label="Home" path="/(home)" color={colors.primary} />
-            <MenuItem icon={Package} label="Collections" path="/collections" color={colors.secondary} />
+            
+            {profile?.is_collector ? (
+              <MenuItem icon={Users} label="My Network" path="/collections/network" color={colors.secondary} />
+            ) : (
+              <MenuItem icon={Package} label="My Collections" path="/collections" color={colors.secondary} />
+            )}
+            
             <MenuItem icon={Leaf} label="Recycling That Pays" path="/impact" color={colors.primary} />
 
             {profile?.is_collector && (

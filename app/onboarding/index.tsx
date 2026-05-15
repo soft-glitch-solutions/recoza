@@ -431,12 +431,14 @@ export default function OnboardingScreen() {
                     marginBottom: layoutConfig.contentFlexDirection === 'row' ? 0 : dynamicHeights.iconMarginBottom,
                     backgroundColor: currentItem.accentColor,
                     transform: [{ rotate: '15deg' }],
+                    borderWidth: 4,
+                    borderColor: '#000000',
                   }
                 ]}>
                   <IconComponent 
                     size={dynamicHeights.iconSize} 
                     color="#FFFFFF" 
-                    strokeWidth={2}
+                    strokeWidth={3}
                   />
                 </View>
             </View>
@@ -513,7 +515,12 @@ export default function OnboardingScreen() {
             <TouchableOpacity
               style={[
                 styles.button, 
-                { backgroundColor: currentSlide === slides.length - 1 ? '#d6772e' : '#327331' },
+                { 
+                  backgroundColor: currentSlide === slides.length - 1 ? '#d6772e' : '#327331',
+                  borderWidth: 3,
+                  borderColor: '#000000',
+                  borderRadius: 16,
+                },
                 isTransitioning && styles.buttonDisabled
               ]}
               onPress={handleNext}
@@ -521,10 +528,10 @@ export default function OnboardingScreen() {
               activeOpacity={0.8}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>
+              <Text style={[styles.buttonText, { color: '#FFFFFF', fontWeight: '900' }]}>
                 {currentSlide === slides.length - 1 ? 'Get Started' : 'Next'}
               </Text>
-              <ArrowRight size={isDesktop ? 18 : scale(20)} color="#ffffff" />
+              <ArrowRight size={isDesktop ? 18 : scale(20)} color="#ffffff" strokeWidth={3} />
             </TouchableOpacity>
           </View>
  

@@ -397,11 +397,11 @@ export default function NetworkScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 32, backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: colors.borderLight }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 32, backgroundColor: colors.background, borderBottomWidth: 3, borderBottomColor: '#000000' }]}>
         <View style={styles.headerTop}>
           <Text style={[styles.headerTitle, { color: colors.primary }]}>My Network</Text>
           <TouchableOpacity
-            style={[styles.qrButton, { backgroundColor: colors.accent }]}
+            style={[styles.qrButton, { backgroundColor: colors.accent, borderWidth: 3, borderColor: '#000000' }]}
             onPress={() => setShowQRModal(true)}
           >
             <QrCode size={20} color={colors.primary} />
@@ -410,12 +410,12 @@ export default function NetworkScreen() {
 
         <View style={styles.inviteCodeSection}>
           <Text style={[styles.inviteCodeLabel, { color: colors.textSecondary }]}>Your Invite Link</Text>
-          <View style={[styles.inviteLinkContainer, { backgroundColor: colors.surfaceSecondary, borderColor: colors.borderLight }]}>
+          <View style={[styles.inviteLinkContainer, { backgroundColor: colors.surfaceSecondary, borderWidth: 3, borderColor: '#000000' }]}>
             <Text style={[styles.inviteLink, { color: colors.text }]} numberOfLines={1}>
               {collectorInviteLink}
             </Text>
             <TouchableOpacity
-              style={[styles.copyButton, { backgroundColor: colors.primary }]}
+              style={[styles.copyButton, { backgroundColor: colors.primary, borderWidth: 2, borderColor: '#000000' }]}
               onPress={() => handleCopyInviteLink(collectorInviteLink)}
             >
               <Copy size={18} color="#FFFFFF" />
@@ -430,7 +430,7 @@ export default function NetworkScreen() {
         </View>
       </View>
 
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { borderWidth: 3, borderColor: '#000000', marginHorizontal: 20, borderRadius: 16, paddingHorizontal: 16, marginTop: 16 }]}>
         <Search size={20} color={colors.textSecondary} />
         <TextInput
           style={styles.searchInput}
@@ -473,11 +473,11 @@ export default function NetworkScreen() {
         {activeTab === 'connected' ? (
           <>
             <View style={styles.statsRow}>
-              <View style={[styles.statCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}>
+              <View style={[styles.statCard, { backgroundColor: colors.surface, borderWidth: 3, borderColor: '#000000', borderRadius: 20 }]}>
                 <Text style={[styles.statValue, { color: colors.text }]}>{activeHouseholds.length}</Text>
                 <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Households</Text>
               </View>
-              <View style={[styles.statCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}>
+              <View style={[styles.statCard, { backgroundColor: colors.surface, borderWidth: 3, borderColor: '#000000', borderRadius: 20 }]}>
                 <Text style={[styles.statValue, { color: colors.text }]}>{totalItemsLogged}</Text>
                 <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Items</Text>
               </View>
@@ -489,10 +489,10 @@ export default function NetworkScreen() {
               filteredHouseholds.map((household: HouseholdConnection) => (
                 <TouchableOpacity
                   key={household.id}
-                  style={[styles.householdCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+                  style={[styles.householdCard, { backgroundColor: colors.surface, borderWidth: 3, borderColor: '#000000', borderRadius: 24, padding: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 12 }]}
                   onPress={() => handleScheduleCollection(household)}
                 >
-                  <View style={[styles.householdAvatar, { backgroundColor: colors.accent }]}>
+                  <View style={[styles.householdAvatar, { backgroundColor: colors.accent, borderWidth: 2, borderColor: '#000000' }]}>
                     <Text style={[styles.householdAvatarText, { color: colors.primary }]}>
                       {household.householdName?.charAt(0) || '?'}
                     </Text>
@@ -540,7 +540,7 @@ export default function NetworkScreen() {
               filteredPendingInvites.map((invite) => (
                 <View
                   key={invite.id}
-                  style={[styles.inviteCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+                  style={[styles.inviteCard, { backgroundColor: colors.surface, borderWidth: 3, borderColor: '#000000', borderRadius: 24, padding: 16, marginBottom: 16 }]}
                 >
                   <View style={styles.inviteHeader}>
                     <View style={styles.inviteInfo}>
@@ -824,8 +824,8 @@ const styles = StyleSheet.create({
   inviteActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    borderTopWidth: 3,
+    borderTopColor: '#000000',
     paddingTop: 12,
   },
   inviteActionButton: {
@@ -844,7 +844,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 40,
     backgroundColor: Colors.white,
-    borderRadius: 20,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   emptyStateText: {
     fontSize: 18,
@@ -894,15 +896,12 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     overflow: 'hidden',
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   fabGradient: {
     width: '100%',
@@ -920,6 +919,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: 24,
+    borderWidth: 4,
+    borderBottomWidth: 0,
+    borderColor: '#000000',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -953,6 +955,8 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 15,
     color: Colors.text,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   previewSection: {
     marginBottom: 24,
@@ -1027,6 +1031,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 24,
     marginBottom: 24,
+    borderWidth: 4,
+    borderColor: '#000000',
   },
   qrCodeText: {
     fontSize: 18,
@@ -1073,6 +1079,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     maxWidth: 400,
     alignSelf: 'center',
+    borderWidth: 4,
+    borderColor: '#000000',
   },
   feedbackIconContainer: {
     width: 96,

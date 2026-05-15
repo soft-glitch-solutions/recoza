@@ -12,7 +12,9 @@ import { QuickLogSection } from '@/components/home/QuickLogSection';
 import { UpcomingCollections } from '@/components/home/UpcomingCollections';
 import { RecentActivity } from '@/components/home/RecentActivity';
 import { SkeletonBlock, SkeletonList } from '@/components/Skeleton';
-import { ChevronRight, ShieldCheck, ArrowRight, UserPlus, CheckCircle, Phone, Zap } from 'lucide-react-native';
+import { ChevronRight, ShieldCheck, ArrowRight, UserPlus, CheckCircle, Phone, Zap, Copy, Share2 } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
+import { Share } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -76,6 +78,24 @@ export default function HomeScreen() {
     }
   };
 
+  const handleShareInvite = async () => {
+    try {
+      const shareUrl = `https://recoza.co.za/join/${profile?.invite_code}`;
+      await Share.share({
+        message: `♻️ Join my recycling network on Recoza! Use my code: ${profile?.invite_code}\n\nDownload the app and help me make South Africa greener: ${shareUrl}`,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  const handleCopyCode = async () => {
+    if (profile?.invite_code) {
+      await Clipboard.setStringAsync(profile.invite_code);
+      Alert.alert('Copied', 'Invite code copied to clipboard!');
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={{ zIndex: 1000 }}>
@@ -118,10 +138,38 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* 2. Link Collector Section (For unlinked households) */}
-          {!isCollector && !linkedCollector && (
-            <View style={[styles.linkCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-              <View style={[styles.linkIconContainer, { backgroundColor: colors.accent + '20' }]}>
+          {/* 2. Link Collector Section (For households) or Invite Section (For collectors) */}
+          {isCollector ? (
+            <View style={[styles.inviteCard, { backgroundColor: colors.surface, borderColor: '#000000', borderWidth: 3 }]}>
+              <View style={[styles.inviteIconContainer, { backgroundColor: colors.secondary + '20', borderWidth: 2, borderColor: '#000000' }]}>
+                <Users size={24} color={colors.secondary} />
+              </View>
+              <View style={styles.inviteContent}>
+                <Text style={[styles.inviteTitle, { color: colors.text }]}>Grow Your Network</Text>
+                <Text style={[styles.inviteSubtitle, { color: colors.textSecondary }]}>
+                  Share your code with neighbors to become their official collector.
+                </Text>
+                <View style={styles.inviteCodeRow}>
+                  <TouchableOpacity 
+                    style={[styles.inviteCodeBox, { backgroundColor: colors.surfaceSecondary, borderWidth: 3, borderColor: '#000000' }]}
+                    onPress={handleCopyCode}
+                  >
+                    <Text style={[styles.inviteCodeText, { color: colors.primary }]}>{profile?.invite_code}</Text>
+                    <Copy size={16} color={colors.textLight} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.inviteShareButton, { backgroundColor: colors.primary, borderWidth: 3, borderColor: '#000000' }]}
+                    onPress={handleShareInvite}
+                  >
+                    <Share2 size={20} color="#fff" />
+                    <Text style={styles.inviteShareText}>Share</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          ) : !linkedCollector && (
+            <View style={[styles.linkCard, { backgroundColor: colors.surface, borderColor: '#000000', borderWidth: 3 }]}>
+              <View style={[styles.linkIconContainer, { backgroundColor: colors.accent + '20', borderWidth: 2, borderColor: '#000000' }]}>
                 <UserPlus size={24} color={colors.primary} />
               </View>
               <View style={styles.linkContent}>
@@ -500,5 +548,66 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  inviteCard: {
+    padding: 20,
+    borderRadius: 24,
+    marginBottom: 24,
+    flexDirection: 'row',
+    gap: 16,
+  },
+  inviteIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inviteContent: {
+    flex: 1,
+  },
+  inviteTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  inviteSubtitle: {
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 16,
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  inviteCodeRow: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+  },
+  inviteCodeBox: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  inviteCodeText: {
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  inviteShareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    height: 52,
+    borderRadius: 16,
+  },
+  inviteShareText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '900',
   },
 });

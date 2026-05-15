@@ -32,23 +32,25 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16, backgroundColor: colors.background }]}>
       <SideMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-      
+
       <View style={styles.headerContent}>
         <View style={styles.leftSection}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.menuButton, { backgroundColor: colors.surfaceSecondary }]}
             onPress={() => setIsMenuOpen(true)}
           >
             <Menu size={20} color={colors.primary} />
           </TouchableOpacity>
           <View style={styles.brandWrapper}>
-            <View style={[styles.logoDot, { backgroundColor: colors.accent }]} />
-            <Text style={[styles.brandName, { color: colors.primary }]}>recoza</Text>
+            <View>
+              <Text style={[styles.brandName, { color: colors.primary }]}>Recoza</Text>
+              <Text style={[styles.subheading, { color: colors.textSecondary }]}>Recycling That Pays</Text>
+            </View>
           </View>
         </View>
-        
+
         <View style={styles.headerActions}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary }]}
             onPress={() => router.push('/profile')}
           >
@@ -103,6 +105,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '900',
     letterSpacing: -1.5,
+  },
+  subheading: {
+    fontSize: 10,
+    fontWeight: '500',
+    letterSpacing: -0.3,
+    marginTop: 2,
   },
   headerActions: {
     flexDirection: 'row',

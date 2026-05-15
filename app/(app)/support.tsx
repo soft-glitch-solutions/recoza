@@ -123,6 +123,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   headerTitle: {
     fontSize: 24,
@@ -140,6 +142,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   heroTitle: {
     fontSize: 24,
@@ -162,11 +166,8 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 24,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   contactIcon: {
     width: 44,
@@ -175,6 +176,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#000000',
   },
   contactLabel: {
     fontSize: 15,
@@ -198,7 +201,8 @@ const styles = StyleSheet.create({
   },
   faqCard: {
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 3,
+    borderColor: '#000000',
     overflow: 'hidden',
   },
   faqItem: {
@@ -206,7 +210,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 18,
-    borderBottomWidth: 1,
+    borderBottomWidth: 3,
+    borderColor: '#000000',
   },
   faqText: {
     fontSize: 15,
@@ -215,7 +220,8 @@ const styles = StyleSheet.create({
   messageCard: {
     padding: 20,
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   messageInput: {
     fontSize: 15,
@@ -228,8 +234,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    height: 52,
+    height: 56,
     borderRadius: 16,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   sendButtonText: {
     color: '#fff',

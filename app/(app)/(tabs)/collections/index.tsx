@@ -14,8 +14,12 @@ import {
   TrendingUp,
   ChevronRight,
   Info,
-  Package
+  Package,
+  Copy,
+  Share2
 } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
+import { Share, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useCallback, useEffect } from 'react';
@@ -134,6 +138,24 @@ export default function CollectionsScreen() {
     }
   };
 
+  const handleShareInvite = async () => {
+    try {
+      const shareUrl = `https://recoza.co.za/join/${profile?.invite_code}`;
+      await Share.share({
+        message: `♻️ Join my recycling network on Recoza! Use my code: ${profile?.invite_code}\n\nDownload the app and help me make South Africa greener: ${shareUrl}`,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  const handleCopyCode = async () => {
+    if (profile?.invite_code) {
+      await Clipboard.setStringAsync(profile.invite_code);
+      Alert.alert('Copied', 'Invite code copied to clipboard!');
+    }
+  };
+
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: colors.background }]} 
@@ -181,6 +203,35 @@ export default function CollectionsScreen() {
             </Text>
           </View>
         </View>
+
+        {isCollector && (
+          <View style={[styles.inviteCard, { backgroundColor: colors.surface, borderColor: '#000000', borderWidth: 3, marginTop: 24 }]}>
+            <View style={[styles.inviteIconContainer, { backgroundColor: colors.secondary + '20', borderWidth: 2, borderColor: '#000000' }]}>
+              <Users size={24} color={colors.secondary} />
+            </View>
+            <View style={styles.inviteContent}>
+              <Text style={styles.inviteTitle}>Grow Your Network</Text>
+              <Text style={styles.inviteSubtitle}>
+                Invite households to join your collection route.
+              </Text>
+              <View style={styles.inviteCodeRow}>
+                <TouchableOpacity 
+                  style={[styles.inviteCodeBox, { backgroundColor: colors.surfaceSecondary, borderWidth: 3, borderColor: '#000000' }]}
+                  onPress={handleCopyCode}
+                >
+                  <Text style={[styles.inviteCodeText, { color: colors.primary }]}>{profile?.invite_code}</Text>
+                  <Copy size={16} color={colors.textLight} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.inviteShareButton, { backgroundColor: colors.primary, borderWidth: 3, borderColor: '#000000' }]}
+                  onPress={handleShareInvite}
+                >
+                  <Share2 size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
 
         {isCollector && (
           <>

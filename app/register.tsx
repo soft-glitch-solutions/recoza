@@ -51,7 +51,7 @@ const verticalScale = (size: number) => {
 export default function RegisterScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { register } = useAuth();
+  const { signUp } = useAuth();
   const { colors, isDark } = useTheme();
   
   const [name, setName] = useState('');
@@ -131,7 +131,7 @@ export default function RegisterScreen() {
     if (!validate()) return;
     setIsLoading(true);
     try {
-      const result = await register(email, password, name);
+      const result = await signUp(email, password, name, ''); // Empty phone for now
       if (result.success) {
         router.replace('/(tabs)/(home)' as any);
       } else {
@@ -180,7 +180,7 @@ export default function RegisterScreen() {
                     backgroundColor: colors.accent,
                     transform: [{ rotate: '15deg' }],
                     borderWidth: 4,
-                    borderColor: colors.primary,
+                    borderColor: '#000000',
                   }
                 ]}>
                   <Recycle size={isDesktop ? 60 : scale(50)} color={colors.primary} />
@@ -226,6 +226,8 @@ export default function RegisterScreen() {
               {
                 backgroundColor: colors.surface,
                 padding: isDesktop ? 40 : scale(24),
+                borderWidth: 4,
+                borderColor: '#000000',
               }
             ]}>
               <Text style={[styles.formTitle, { fontSize: isDesktop ? 28 : scale(26), color: colors.text }]}>
@@ -245,8 +247,9 @@ export default function RegisterScreen() {
                 styles.inputWrapper,
                 {
                   backgroundColor: colors.surfaceSecondary,
-                  borderColor: colors.borderLight,
-                  height: isDesktop ? 52 : scale(50),
+                  borderColor: '#000000',
+                  borderWidth: 3,
+                  height: isDesktop ? 56 : scale(54),
                   paddingHorizontal: isDesktop ? 16 : scale(16),
                   marginBottom: isDesktop ? 16 : scale(14),
                 }
@@ -268,8 +271,9 @@ export default function RegisterScreen() {
                 styles.inputWrapper,
                 {
                   backgroundColor: colors.surfaceSecondary,
-                  borderColor: colors.borderLight,
-                  height: isDesktop ? 52 : scale(50),
+                  borderColor: '#000000',
+                  borderWidth: 3,
+                  height: isDesktop ? 56 : scale(54),
                   paddingHorizontal: isDesktop ? 16 : scale(16),
                   marginBottom: isDesktop ? 16 : scale(14),
                 }
@@ -292,8 +296,9 @@ export default function RegisterScreen() {
                 styles.inputWrapper,
                 {
                   backgroundColor: colors.surfaceSecondary,
-                  borderColor: colors.borderLight,
-                  height: isDesktop ? 52 : scale(50),
+                  borderColor: '#000000',
+                  borderWidth: 3,
+                  height: isDesktop ? 56 : scale(54),
                   paddingHorizontal: isDesktop ? 16 : scale(16),
                   marginBottom: isDesktop ? 16 : scale(14),
                 }
@@ -322,8 +327,9 @@ export default function RegisterScreen() {
                 styles.inputWrapper,
                 {
                   backgroundColor: colors.surfaceSecondary,
-                  borderColor: colors.borderLight,
-                  height: isDesktop ? 52 : scale(50),
+                  borderColor: '#000000',
+                  borderWidth: 3,
+                  height: isDesktop ? 56 : scale(54),
                   paddingHorizontal: isDesktop ? 16 : scale(16),
                   marginBottom: isDesktop ? 16 : scale(14),
                 }
@@ -359,16 +365,18 @@ export default function RegisterScreen() {
                   styles.registerButton,
                   {
                     backgroundColor: colors.secondary,
-                    height: isDesktop ? 52 : scale(50),
-                    borderRadius: isDesktop ? 26 : scale(25),
+                    height: isDesktop ? 56 : scale(54),
+                    borderRadius: 16,
                     marginBottom: isDesktop ? 20 : scale(16),
+                    borderWidth: 3,
+                    borderColor: '#000000',
                   },
                   isLoading && styles.registerButtonDisabled
                 ]}
                 onPress={handleRegister}
                 disabled={isLoading}
               >
-                <Text style={[styles.registerButtonText, { fontSize: isDesktop ? 16 : scale(16) }]}>
+                <Text style={[styles.registerButtonText, { fontSize: isDesktop ? 18 : scale(18), fontWeight: '900' }]}>
                   {isLoading ? 'Creating account...' : 'Create Account'}
                 </Text>
               </TouchableOpacity>
