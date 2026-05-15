@@ -95,7 +95,10 @@ export const RecyclablesProvider: React.FC<{ children: React.ReactNode }> = ({ c
       
       const profile = profileData as any;
 
-      let query = supabase.from('collections' as any).select('*');
+      let query = supabase.from('collections' as any).select(`
+        *,
+        collector:collector_id(id, full_name, phone_number)
+      `);
 
       if (profile?.is_collector) {
         // Fetch collections where user is either the collector OR the household
@@ -111,6 +114,8 @@ export const RecyclablesProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const formattedCollections: Collection[] = (data || []).map((c: any) => ({
         id: c.id,
         collectorId: c.collector_id,
+        collectorName: c.collector?.full_name || 'Your Collector',
+        collectorPhone: c.collector?.phone_number || '',
         householdId: c.household_id,
         householdName: c.household_name || `Household ${c.household_id.slice(0, 8)}`,
         scheduledDate: c.scheduled_date,
@@ -183,13 +188,22 @@ export const RecyclablesProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .from('household_connections' as any)
         .select(`
           *,
-          household:household_id(id, full_name, phone_number)
+          household:household_id(id, full_name, phone_number, email)
         `)
         .eq('collector_id', user.id);
 
       if (error) throw error;
 
-      const connections = data as any[];
+      const connections: HouseholdConnection[] = (data || []).map((c: any) => ({
+        id: c.id,
+        householdId: c.household_id,
+        householdName: c.household?.full_name || 'Unknown Household',
+        householdEmail: c.household?.email || '',
+        connectedAt: c.created_at,
+        totalItemsLogged: 0,
+        status: c.status
+      }));
+
       setActiveConnections(connections.filter(c => c.status === 'active'));
       setPendingConnections(connections.filter(c => c.status === 'pending'));
     } catch (error) {

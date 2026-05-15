@@ -42,6 +42,8 @@ export interface RecyclablePrice {
 export interface Collection {
   id: string;
   collectorId: string;
+  collectorName?: string;
+  collectorPhone?: string;
   householdId: string;
   householdName: string;
   scheduledDate: string;

@@ -16,13 +16,15 @@ import {
   Info,
   Package,
   Copy,
-  Share2
+  Share2,
+  Phone,
+  MessageSquare
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Share, Alert } from 'react-native';
+import { Share, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -88,6 +90,13 @@ export default function CollectionsScreen() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedHousehold, setSelectedHousehold] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const nextPickup = useMemo(() => {
+    if (!isHousehold) return null;
+    return collections
+      .filter(c => c.status === 'scheduled')
+      .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())[0];
+  }, [collections, isHousehold]);
 
   const [feedbackConfig, setFeedbackConfig] = useState<{
     visible: boolean;
@@ -167,6 +176,32 @@ export default function CollectionsScreen() {
   const handleScheduleForHousehold = (household: any) => {
     setSelectedHousehold(household);
     setShowScheduleModal(true);
+  };
+
+  const handleContactCollector = (phone: string) => {
+    if (phone) {
+      Linking.openURL(`tel:${phone}`);
+    } else {
+      Alert.alert('No Number', 'Collector phone number not available.');
+    }
+  };
+
+  const handleRescheduleRequest = () => {
+    Alert.alert(
+      'Reschedule Request',
+      'Please message your collector to coordinate a new pickup time.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Message Collector', 
+          onPress: () => {
+            if (nextPickup?.collectorPhone) {
+              Linking.openURL(`sms:${nextPickup.collectorPhone}`);
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (authLoading) {
@@ -347,15 +382,48 @@ export default function CollectionsScreen() {
         {isHousehold && (
           <>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Next Pickup</Text>
-            <View style={[styles.pickupCard, { backgroundColor: colors.surface, borderWidth: 3, borderColor: '#000000' }]}>
-              <View style={[styles.pickupIconWrapper, { backgroundColor: isDark ? '#064E3B' : '#F0FDF4', borderWidth: 2, borderColor: '#000000' }]}>
-                <Calendar size={24} color={colors.primary} />
+            {nextPickup ? (
+              <View style={[styles.pickupCard, { backgroundColor: colors.surface, borderWidth: 3, borderColor: '#000000' }]}>
+                <View style={[styles.pickupIconWrapper, { backgroundColor: isDark ? '#064E3B' : '#F0FDF4', borderWidth: 2, borderColor: '#000000' }]}>
+                  <Calendar size={24} color={colors.primary} />
+                </View>
+                <View style={styles.pickupInfo}>
+                  <Text style={[styles.pickupTitle, { color: colors.text }]}>
+                    {new Date(nextPickup.scheduledDate).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+                  </Text>
+                  <Text style={[styles.pickupSubtitle, { color: colors.textSecondary }]}>
+                    {nextPickup.collectorName} is coming to collect
+                  </Text>
+                  
+                  <View style={styles.pickupActionRow}>
+                    <TouchableOpacity 
+                      style={[styles.pickupActionBtn, { backgroundColor: colors.surfaceSecondary, borderWidth: 2, borderColor: '#000000' }]}
+                      onPress={handleRescheduleRequest}
+                    >
+                      <Clock size={14} color={colors.text} />
+                      <Text style={[styles.pickupActionText, { color: colors.text }]}>Reschedule</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.pickupActionBtn, { backgroundColor: colors.primary, borderWidth: 2, borderColor: '#000000' }]}
+                      onPress={() => handleContactCollector(nextPickup.collectorPhone || '')}
+                    >
+                      <Phone size={14} color="#fff" />
+                      <Text style={[styles.pickupActionText, { color: '#fff' }]}>Contact</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-              <View style={styles.pickupInfo}>
-                <Text style={[styles.pickupTitle, { color: colors.text }]}>Scheduled soon</Text>
-                <Text style={[styles.pickupSubtitle, { color: colors.textSecondary }]}>Your collector will arrive shortly</Text>
+            ) : (
+              <View style={[styles.pickupCard, { backgroundColor: colors.surface, borderWidth: 3, borderColor: '#000000', opacity: 0.7 }]}>
+                <View style={[styles.pickupIconWrapper, { backgroundColor: colors.borderLight, borderWidth: 2, borderColor: '#000000' }]}>
+                  <Calendar size={24} color={colors.textLight} />
+                </View>
+                <View style={styles.pickupInfo}>
+                  <Text style={[styles.pickupTitle, { color: colors.textLight }]}>No pickup scheduled</Text>
+                  <Text style={[styles.pickupSubtitle, { color: colors.textLight }]}>Your collector hasn't set a date yet</Text>
+                </View>
               </View>
-            </View>
+            )}
 
             {!collectorApplication && (
               <TouchableOpacity style={[styles.becomeCollectorCard, { backgroundColor: colors.primary, borderWidth: 3, borderColor: '#000000' }]} onPress={handleApplyPress}>
@@ -522,6 +590,9 @@ const styles = StyleSheet.create({
   pickupInfo: { flex: 1 },
   pickupTitle: { fontSize: 16, fontWeight: '800' },
   pickupSubtitle: { fontSize: 13, marginTop: 2, fontWeight: '500' },
+  pickupActionRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  pickupActionBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, gap: 6 },
+  pickupActionText: { fontSize: 12, fontWeight: '800' },
   becomeCollectorCard: { borderRadius: 24, overflow: 'hidden', marginTop: 16 },
   becomeCollectorContent: { flexDirection: 'row', padding: 20, alignItems: 'center' },
   becomeCollectorTitle: { fontSize: 18, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },

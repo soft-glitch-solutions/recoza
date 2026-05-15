@@ -15,6 +15,7 @@ export default function TabLayout() {
   const { profile } = useAuth();
   const { colors } = useTheme();
   const isCollector = profile?.is_collector || profile?.collector_approved;
+  const isHousehold = profile?.is_collector === false || profile?.collector_approved === false;
 
   return (
     <RecyclablesProvider>
@@ -37,7 +38,7 @@ export default function TabLayout() {
             ),
           }}
         />
-        
+
         <Tabs.Screen
           name="collections"
           options={{
@@ -47,7 +48,7 @@ export default function TabLayout() {
             ),
           }}
         />
-        
+
         <Tabs.Screen
           name="impact"
           options={{
@@ -64,13 +65,14 @@ export default function TabLayout() {
             name="drop-off"
             options={{
               title: 'Drop-off',
+              href: isHousehold ? null : undefined,
               tabBarIcon: ({ color }) => (
                 <MapPin size={22} color={color} />
               ),
             }}
           />
         )}
-        
+
         <Tabs.Screen
           name="profile"
           options={{
