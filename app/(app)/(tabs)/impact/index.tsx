@@ -144,24 +144,25 @@ export default function ImpactScreen() {
     headerPaddingBottom: isDesktop ? 30 : isTablet ? 24 : 20,
   };
 
-  const renderImpactCard = (solidColor: string, icon: any, value: string, label: string) => (
-    <View
-      style={[
-        styles.impactCard, 
-        isDesktop && { padding: 24 }, 
-        { 
-          backgroundColor: colors.surface, 
-          borderColor: colors.borderLight,
-          borderBottomWidth: 4,
-          borderBottomColor: solidColor,
-        }
-      ]}
-    >
-      <View style={[styles.impactIconContainer, { backgroundColor: solidColor }]}>
-        {icon}
+  const renderImpactRing = (solidColor: string, icon: any, value: string, label: string, progress: number) => (
+    <View style={styles.impactRingContainer}>
+      <View style={[styles.ringOuter, { borderColor: solidColor + '20' }]}>
+         <View style={[styles.ringInner, { backgroundColor: solidColor + '10' }]}>
+           <View style={[styles.ringContent]}>
+             {icon}
+             <Text style={[styles.ringValue, { color: colors.text }]}>{value}</Text>
+           </View>
+         </View>
+         {/* Simple circular progress visualization using borders */}
+         <View style={[styles.ringProgress, { 
+           borderColor: solidColor, 
+           borderTopWidth: 4, 
+           borderRightWidth: progress > 0.25 ? 4 : 0,
+           borderBottomWidth: progress > 0.5 ? 4 : 0,
+           borderLeftWidth: progress > 0.75 ? 4 : 0,
+         }]} />
       </View>
-      <Text style={[styles.impactValue, isDesktop && { fontSize: 26 }, { color: colors.text }]}>{value}</Text>
-      <Text style={[styles.impactLabel, isDesktop && { fontSize: 14 }, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.ringLabel, { color: colors.textSecondary }]}>{label}</Text>
     </View>
   );
 
@@ -263,11 +264,11 @@ export default function ImpactScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.impactGrid}>
-          {renderImpactCard(colors.info, <Droplets size={20} color="#fff" />, `${waterSaved.toFixed(0)}L`, 'Water Saved')}
-          {renderImpactCard(colors.primary, <Globe size={20} color="#fff" />, `${co2Saved.toFixed(1)}kg`, 'CO₂ Prevented')}
-          {renderImpactCard(colors.secondary, <Zap size={20} color="#fff" />, `${energySaved.toFixed(1)}kWh`, 'Energy Saved')}
-          {renderImpactCard(colors.accent, <TreePine size={20} color="#fff" />, treeEquivalent.toFixed(1), 'Trees Saved')}
+        <View style={styles.infographicGrid}>
+          {renderImpactRing(colors.info, <Droplets size={18} color={colors.info} />, `${waterSaved.toFixed(0)}L`, 'Water', 0.8)}
+          {renderImpactRing(colors.primary, <Globe size={18} color={colors.primary} />, `${co2Saved.toFixed(0)}kg`, 'CO₂', 0.6)}
+          {renderImpactRing(colors.secondary, <Zap size={18} color={colors.secondary} />, `${energySaved.toFixed(0)}kWh`, 'Energy', 0.4)}
+          {renderImpactRing(colors.accent, <TreePine size={18} color={colors.accent} />, treeEquivalent.toFixed(1), 'Trees', 0.3)}
         </View>
 
         <View style={styles.section}>
@@ -387,11 +388,14 @@ const styles = StyleSheet.create({
   quickStatDivider: { width: 1, height: 24 },
   scrollView: { flex: 1 },
   scrollContent: { width: '100%', paddingTop: 0 },
-  impactGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
-  impactCard: { width: '48%', borderRadius: 20, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1 },
-  impactIconContainer: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  impactValue: { fontSize: 22, fontWeight: '700' },
-  impactLabel: { fontSize: 12, marginTop: 4 },
+  infographicGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 16, marginBottom: 32 },
+  impactRingContainer: { width: '47%', alignItems: 'center', marginBottom: 8 },
+  ringOuter: { width: 100, height: 100, borderRadius: 50, borderWidth: 4, justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  ringInner: { width: 84, height: 84, borderRadius: 42, justifyContent: 'center', alignItems: 'center' },
+  ringContent: { alignItems: 'center', justifyContent: 'center' },
+  ringValue: { fontSize: 16, fontWeight: '800', marginTop: 4 },
+  ringLabel: { fontSize: 13, fontWeight: '600', marginTop: 10 },
+  ringProgress: { position: 'absolute', width: 100, height: 100, borderRadius: 50, borderTransparent: true },
   section: { marginBottom: 24 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontSize: 20, fontWeight: '700' },
