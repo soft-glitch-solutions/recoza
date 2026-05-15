@@ -51,6 +51,7 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~19.1.10",
     "react-native-worklets-core": "^1.6.2",
+    "supabase": "^2.95.3",
     "typescript": "~5.9.2"
   }
 }

@@ -245,20 +245,15 @@ export default function CollectionsScreen() {
             </View>
 
             {!profile?.is_collector && !collectorApplication && (
-              <TouchableOpacity style={styles.becomeCollectorCard} onPress={handleApplyPress}>
-                <LinearGradient
-                  colors={[colors.primary, colors.primaryDark]}
-                  style={styles.becomeCollectorGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
+              <TouchableOpacity style={[styles.becomeCollectorCard, { backgroundColor: colors.primary }]} onPress={handleApplyPress}>
+                <View style={styles.becomeCollectorContent}>
                   <Award size={24} color="#fff" />
                   <View style={{ flex: 1, marginLeft: 16 }}>
                     <Text style={styles.becomeCollectorTitle}>Become a Collector</Text>
                     <Text style={styles.becomeCollectorSubtitle}>Earn rewards for every kg</Text>
                   </View>
                   <Plus size={24} color="#fff" />
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
             )}
           </>
@@ -284,12 +279,12 @@ export default function CollectionsScreen() {
       <Modal visible={showCollectorModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-            <div style={styles.modalHeaderClose}>
+            <View style={styles.modalHeaderClose}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Join as Collector</Text>
               <TouchableOpacity onPress={() => setShowCollectorModal(false)}>
                 <X size={24} color={colors.textSecondary} />
               </TouchableOpacity>
-            </div>
+            </View>
             <Text style={[styles.modalSub, { color: colors.textSecondary }]}>Help your community and earn rewards.</Text>
             <TextInput 
               style={[styles.textArea, { backgroundColor: colors.surfaceSecondary, color: colors.text, borderColor: colors.borderLight }]} 
@@ -319,38 +314,38 @@ export default function CollectionsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 24, paddingBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { fontSize: 28, fontWeight: '800' },
-  headerSubtitle: { fontSize: 13, marginTop: 4 },
-  networkCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', elevation: 4 },
+  headerTitle: { fontSize: 32, fontWeight: '900', letterSpacing: -1 },
+  headerSubtitle: { fontSize: 14, marginTop: 4, fontWeight: '500' },
+  networkCircle: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   content: { padding: 20 },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 12, marginTop: 24 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, marginTop: 24 },
   badgeCount: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  statsRowSimple: { flexDirection: 'row', padding: 20, borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 1, alignItems: 'center' },
+  statsRowSimple: { flexDirection: 'row', padding: 20, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
   statPillSimple: { alignItems: 'center', flex: 1 },
   statLabelSimple: { fontSize: 10, textTransform: 'uppercase', marginBottom: 4 },
   statValueSimple: { fontSize: 16, fontWeight: '700' },
   statDivider: { width: 1, height: '60%' },
-  taskCard: { flexDirection: 'row', padding: 16, borderRadius: 20, alignItems: 'center', marginBottom: 12, elevation: 1 },
+  taskCard: { flexDirection: 'row', padding: 16, borderRadius: 16, alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' },
   taskIconContainer: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   taskInfo: { flex: 1, marginLeft: 12 },
   taskName: { fontSize: 14, fontWeight: '600' },
   taskDate: { fontSize: 12, marginTop: 2 },
-  earningsCard: { flexDirection: 'row', padding: 20, borderRadius: 24, elevation: 1 },
+  earningsCard: { flexDirection: 'row', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB' },
   earningItem: { flex: 1, alignItems: 'center' },
   earningValue: { fontSize: 16, fontWeight: '700', marginTop: 8 },
   earningLabel: { fontSize: 10, marginTop: 2 },
   vDivider: { width: 1, height: '80%' },
-  pickupCard: { flexDirection: 'row', padding: 20, borderRadius: 24, alignItems: 'center', gap: 16, elevation: 1 },
+  pickupCard: { flexDirection: 'row', padding: 20, borderRadius: 16, alignItems: 'center', gap: 16, borderWidth: 1, borderColor: '#E5E7EB' },
   pickupIconWrapper: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   pickupInfo: { flex: 1 },
   pickupTitle: { fontSize: 16, fontWeight: '600' },
   pickupSubtitle: { fontSize: 13, marginTop: 2 },
-  becomeCollectorCard: { borderRadius: 24, overflow: 'hidden', marginTop: 16 },
-  becomeCollectorGradient: { flexDirection: 'row', padding: 20, alignItems: 'center' },
-  becomeCollectorTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
-  becomeCollectorSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  becomeCollectorCard: { borderRadius: 16, overflow: 'hidden', marginTop: 16 },
+  becomeCollectorContent: { flexDirection: 'row', padding: 20, alignItems: 'center' },
+  becomeCollectorTitle: { fontSize: 18, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
+  becomeCollectorSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.9)', marginTop: 2, fontWeight: '500' },
   historyLinkMain: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, marginTop: 24, borderRadius: 20 },
   historyLinkText: { fontSize: 15, fontWeight: '600' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },

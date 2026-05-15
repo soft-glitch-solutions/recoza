@@ -11,7 +11,7 @@ import { QuickLogSection } from '@/components/home/QuickLogSection';
 import { UpcomingCollections } from '@/components/home/UpcomingCollections';
 import { RecentActivity } from '@/components/home/RecentActivity';
 import { SkeletonBlock, SkeletonList } from '@/components/Skeleton';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, ShieldCheck, ArrowRight } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -60,7 +60,28 @@ export default function HomeScreen() {
           {/* 1. Quick Log Hero */}
           <QuickLogSection />
 
-          {/* 2. Unified Stats (The 3 Pills) */}
+          {/* 2. Become a Collector CTA (For non-collectors) */}
+          {!isCollector && (
+            <TouchableOpacity 
+              style={[styles.collectorCTA, { backgroundColor: colors.secondary }]}
+              onPress={() => router.push('/profile')}
+            >
+              <View style={styles.ctaContent}>
+                <View style={styles.ctaIconContainer}>
+                  <ShieldCheck size={24} color={colors.secondary} />
+                </View>
+                <View style={styles.ctaTextContainer}>
+                  <Text style={styles.ctaTitle}>Become a Collector</Text>
+                  <Text style={styles.ctaSubtitle}>Earn rewards for every kg collected</Text>
+                </View>
+                <View style={[styles.arrowContainer, { backgroundColor: colors.accent }]}>
+                   <ArrowRight size={16} color={colors.primary} />
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {/* 3. Unified Stats (The 3 Pills) */}
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Personal Impact</Text>
           </View>
@@ -141,8 +162,41 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  collectorCTA: {
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 24,
+  },
+  ctaContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  ctaIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ctaTextContainer: {
+    flex: 1,
+  },
+  ctaTitle: {
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '800',
+  },
+  ctaSubtitle: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 2,
   },
   seeAll: {
     fontSize: 14,
@@ -158,5 +212,12 @@ const styles = StyleSheet.create({
   historyLinkText: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  arrowContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

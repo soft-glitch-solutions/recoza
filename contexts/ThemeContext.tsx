@@ -46,12 +46,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const isDark = 
-    themeMode === 'system' 
-      ? systemColorScheme === 'dark' 
-      : themeMode === 'dark';
-
-  const colors = isDark ? dark : light;
+  const isDark = false;
+  const colors = light;
 
   return (
     <ThemeContext.Provider value={{ 

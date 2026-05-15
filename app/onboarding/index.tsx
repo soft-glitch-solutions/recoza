@@ -61,27 +61,30 @@ const verticalScale = (size: number) => {
 const slides = [
   {
     id: 1,
-    title: 'Welcome to Recoza',
+    title: 'welcome to recoza',
     subtitle: 'Turn Recycling Into Income',
     description: 'Join South Africa\'s community-powered recycling movement. Help the environment while earning money.',
     icon: Recycle,
-    gradientColors: ['#2D9B5E', '#1E7A45'] as const,
+    backgroundColor: '#FFFFFF',
+    accentColor: '#c8d643', // Lime
   },
   {
     id: 2,
-    title: 'Build Your Network',
+    title: 'build your network',
     subtitle: 'Connect With Your Community',
     description: 'Invite friends, family, and neighbours to join. Become their trusted recycling collector.',
     icon: Users,
-    gradientColors: ['#3B82F6', '#1D4ED8'] as const,
+    backgroundColor: '#FFFFFF',
+    accentColor: '#d6772e', // Orange
   },
   {
     id: 3,
-    title: 'Track & Earn',
+    title: 'track & earn',
     subtitle: 'Predictable Weekly Income',
     description: 'Log recyclables, plan collections, and see your estimated earnings grow week by week.',
     icon: TrendingUp,
-    gradientColors: ['#F59E0B', '#D97706'] as const,
+    backgroundColor: '#FFFFFF',
+    accentColor: '#327331', // Dark Green
   },
 ];
 
@@ -357,14 +360,7 @@ export default function OnboardingScreen() {
   const IconComponent = currentItem.icon;
 
   return (
-    <View style={styles.container}>
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={currentItem.gradientColors}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
+    <View style={[styles.container, { backgroundColor: currentItem.backgroundColor }]}>
       
       {/* Content Container */}
       <View style={styles.contentContainer}>
@@ -388,7 +384,7 @@ export default function OnboardingScreen() {
                 disabled={isTransitioning}
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
-                <ChevronLeft size={isDesktop ? 20 : scale(24)} color="#ffffff" />
+                <ChevronLeft size={isDesktop ? 20 : scale(24)} color="#327331" />
               </TouchableOpacity>
             ) : (
               <View style={styles.placeholder} />
@@ -400,12 +396,12 @@ export default function OnboardingScreen() {
               disabled={isTransitioning}
               hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             >
-              <Text style={styles.skipText}>
+              <Text style={[styles.skipText, { color: '#327331' }]}>
                 Skip
               </Text>
             </TouchableOpacity>
           </View>
-
+ 
           {/* Main Content with Fade Animation */}
           <Animated.View 
             style={[
@@ -426,23 +422,25 @@ export default function OnboardingScreen() {
                 maxWidth: layoutConfig.iconMaxWidth,
               }
             ]}>
-              <View style={[
-                styles.iconContainer,
-                {
-                  width: dynamicHeights.iconContainerSize,
-                  height: dynamicHeights.iconContainerSize,
-                  borderRadius: dynamicHeights.iconContainerSize / 2,
-                  marginBottom: layoutConfig.contentFlexDirection === 'row' ? 0 : dynamicHeights.iconMarginBottom,
-                }
-              ]}>
-                <IconComponent 
-                  size={dynamicHeights.iconSize} 
-                  color="#ffffff" 
-                  strokeWidth={1.5}
-                />
-              </View>
+                <View style={[
+                  styles.iconContainer,
+                  {
+                    width: dynamicHeights.iconContainerSize,
+                    height: dynamicHeights.iconContainerSize,
+                    borderRadius: 32,
+                    marginBottom: layoutConfig.contentFlexDirection === 'row' ? 0 : dynamicHeights.iconMarginBottom,
+                    backgroundColor: currentItem.accentColor,
+                    transform: [{ rotate: '15deg' }],
+                  }
+                ]}>
+                  <IconComponent 
+                    size={dynamicHeights.iconSize} 
+                    color="#FFFFFF" 
+                    strokeWidth={2}
+                  />
+                </View>
             </View>
-
+ 
             {/* Text Content */}
             <View style={[
               styles.textContainer, 
@@ -457,6 +455,9 @@ export default function OnboardingScreen() {
                 { 
                   fontSize: dynamicHeights.titleSize,
                   textAlign: layoutConfig.textAlign,
+                  fontWeight: '900',
+                  letterSpacing: -1.5,
+                  color: '#327331',
                 }
               ]}>
                 {currentItem.title}
@@ -466,7 +467,9 @@ export default function OnboardingScreen() {
                 { 
                   fontSize: dynamicHeights.subtitleSize,
                   textAlign: layoutConfig.textAlign,
-                  marginBottom: verticalScale(8),
+                  marginBottom: verticalScale(12),
+                  fontWeight: '700',
+                  color: currentItem.accentColor,
                 }
               ]}>
                 {currentItem.subtitle}
@@ -477,13 +480,15 @@ export default function OnboardingScreen() {
                   fontSize: dynamicHeights.descriptionSize,
                   lineHeight: dynamicHeights.descriptionSize * 1.5,
                   textAlign: layoutConfig.textAlign,
+                  fontWeight: '500',
+                  color: '#4B5563',
                 }
               ]}>
                 {currentItem.description}
               </Text>
             </View>
           </Animated.View>
-
+ 
           {/* Footer with Navigation */}
           <View style={[styles.footer, { marginTop: dynamicHeights.footerMarginTop }]}>
             {/* Pagination Dots */}
@@ -494,7 +499,7 @@ export default function OnboardingScreen() {
                   style={[
                     styles.dot,
                     {
-                      backgroundColor: index === currentSlide ? '#ffffff' : 'rgba(255, 255, 255, 0.3)',
+                      backgroundColor: index === currentSlide ? '#327331' : '#E5E7EB',
                       width: index === currentSlide ? (isDesktop ? 24 : scale(24)) : (isDesktop ? 8 : scale(8)),
                       height: isDesktop ? 8 : scale(8),
                       borderRadius: isDesktop ? 4 : scale(4),
@@ -503,11 +508,12 @@ export default function OnboardingScreen() {
                 />
               ))}
             </View>
-
+ 
             {/* Next/Get Started Button */}
             <TouchableOpacity
               style={[
                 styles.button, 
+                { backgroundColor: currentSlide === slides.length - 1 ? '#d6772e' : '#327331' },
                 isTransitioning && styles.buttonDisabled
               ]}
               onPress={handleNext}
@@ -515,17 +521,17 @@ export default function OnboardingScreen() {
               activeOpacity={0.8}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={styles.buttonText}>
+              <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>
                 {currentSlide === slides.length - 1 ? 'Get Started' : 'Next'}
               </Text>
               <ArrowRight size={isDesktop ? 18 : scale(20)} color="#ffffff" />
             </TouchableOpacity>
           </View>
-
+ 
           {/* Developer Credit - Only show if there's space */}
           {!isTinyScreen && (
             <View style={styles.credit}>
-              <Text style={styles.creditText}>
+              <Text style={[styles.creditText, { color: '#9CA3AF' }]}>
                 Recoza v1.0.0
               </Text>
             </View>
@@ -589,7 +595,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     aspectRatio: 1,
@@ -630,23 +635,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: isDesktop ? 32 : isTablet ? scale(32) : scale(28),
-    paddingVertical: isDesktop ? 14 : isTablet ? verticalScale(14) : verticalScale(12),
-    borderRadius: isDesktop ? 30 : scale(30),
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    minWidth: isDesktop ? 140 : isTablet ? scale(140) : scale(130),
-    minHeight: isDesktop ? 48 : isTablet ? verticalScale(48) : verticalScale(44),
+    paddingHorizontal: isDesktop ? 32 : scale(32),
+    paddingVertical: isDesktop ? 16 : verticalScale(16),
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    minWidth: isDesktop ? 160 : scale(160),
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: '#ffffff',
-    fontSize: isDesktop ? 16 : isTablet ? scale(16) : scale(15),
-    fontWeight: 'bold',
-    marginRight: isDesktop ? 8 : scale(8),
+    color: Colors.primary,
+    fontSize: isDesktop ? 16 : scale(16),
+    fontWeight: '900',
+    marginRight: 8,
+    textTransform: 'uppercase',
   },
   credit: {
     alignItems: 'center',

@@ -16,25 +16,18 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: styles.tabBar,
-          tabBarBackground: () => (
-            <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />
-          ),
-          tabBarShowLabel: false,
+          tabBarShowLabel: true,
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: '#94A3B8',
+          tabBarLabelStyle: styles.tabBarLabel,
         }}
       >
         <Tabs.Screen
           name="(home)"
           options={{
             title: 'Home',
-            tabBarIcon: ({ color, focused }) => (
-              <Animated.View style={[styles.tabItem, focused && styles.tabItemActive]}>
-                <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-                  <Home size={22} color={focused ? Colors.white : color} />
-                </View>
-                {focused && <View style={styles.activeIndicator} />}
-              </Animated.View>
+            tabBarIcon: ({ color }) => (
+              <Home size={22} color={color} />
             ),
           }}
         />
@@ -43,13 +36,8 @@ export default function TabLayout() {
           name="collections"
           options={{
             title: 'Collections',
-            tabBarIcon: ({ color, focused }) => (
-              <Animated.View style={[styles.tabItem, focused && styles.tabItemActive]}>
-                <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-                  <Package size={22} color={focused ? Colors.white : color} />
-                </View>
-                {focused && <View style={styles.activeIndicator} />}
-              </Animated.View>
+            tabBarIcon: ({ color }) => (
+              <Package size={22} color={color} />
             ),
           }}
         />
@@ -58,13 +46,8 @@ export default function TabLayout() {
           name="impact"
           options={{
             title: 'Impact',
-            tabBarIcon: ({ color, focused }) => (
-              <Animated.View style={[styles.tabItem, focused && styles.tabItemActive]}>
-                <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-                  <Leaf size={22} color={focused ? Colors.white : color} />
-                </View>
-                {focused && <View style={styles.activeIndicator} />}
-              </Animated.View>
+            tabBarIcon: ({ color }) => (
+              <Leaf size={22} color={color} />
             ),
           }}
         />
@@ -73,13 +56,8 @@ export default function TabLayout() {
           name="profile"
           options={{
             title: 'Profile',
-            tabBarIcon: ({ color, focused }) => (
-              <Animated.View style={[styles.tabItem, focused && styles.tabItemActive]}>
-                <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-                  <User size={22} color={focused ? Colors.white : color} />
-                </View>
-                {focused && <View style={styles.activeIndicator} />}
-              </Animated.View>
+            tabBarIcon: ({ color }) => (
+              <User size={22} color={color} />
             ),
           }}
         />
@@ -90,55 +68,17 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 16,
-    height: 70,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 35,
-    borderTopWidth: 0,
+    height: Platform.OS === 'ios' ? 88 : 64,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
     elevation: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+    paddingTop: 10,
   },
-  tabItem: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  tabItemActive: {
-    transform: [{ translateY: -4 }],
-  },
-  iconWrapper: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  iconWrapperActive: {
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: -6,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.primary,
+  tabBarLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
   },
 });

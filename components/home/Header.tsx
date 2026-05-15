@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Recycle } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -15,99 +15,73 @@ interface HeaderProps {
   };
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  isDesktop = false, 
+export const Header: React.FC<HeaderProps> = ({
+  isDesktop = false,
   scale = (size) => size,
   layout = { paddingHorizontal: 20, contentMaxWidth: '100%' }
 }) => {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { profile } = useAuth();
   const { colors } = useTheme();
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
-
   return (
-    <LinearGradient
-      colors={colors.headerGradient}
-      style={[
-        styles.header,
-        { 
-          paddingTop: insets.top + (isDesktop ? 24 : 16),
-          paddingBottom: isDesktop ? 40 : 20,
-        }
-      ]}
-    >
-      <View style={[
-        styles.headerContent,
-        { 
-          paddingHorizontal: layout.paddingHorizontal,
-          maxWidth: layout.contentMaxWidth,
-          alignSelf: 'center',
-          width: '100%',
-        }
-      ]}>
-        <View style={styles.headerLeft}>
-          <Text style={[styles.greeting, isDesktop && { fontSize: scale(18) }]}>
-            {getGreeting()}
-          </Text>
-          <Text style={[styles.userName, isDesktop && { fontSize: scale(32) }]}>
-            {profile?.full_name?.split(' ')[0] || 'Recycler'}
-          </Text>
+    <View style={[styles.container, { paddingTop: insets.top + 16, backgroundColor: colors.background }]}>
+      <View style={styles.headerContent}>
+        <View style={styles.brandWrapper}>
+          <View style={[styles.logoDot, { backgroundColor: colors.accent }]} />
+          <Text style={[styles.brandName, { color: colors.primary }]}>recoza</Text>
         </View>
-        <View style={styles.headerRight}>
-          <View style={[
-            styles.logoSmall,
-            isDesktop && {
-              width: scale(52),
-              height: scale(52),
-              borderRadius: scale(26),
-            }
-          ]}>
-            <Recycle size={isDesktop ? scale(28) : 24} color="#fff" />
-          </View>
+        
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={[styles.iconButton, { backgroundColor: colors.surfaceSecondary }]}
+            onPress={() => router.push('/profile')}
+          >
+            <User size={20} color={colors.primary} />
+          </TouchableOpacity>
         </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+  container: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderColor: '#F3F4F6',
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
   },
-  headerLeft: {
-    flex: 1,
+  brandWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  headerRight: {
-    alignItems: 'flex-end',
+  logoDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    transform: [{ rotate: '45deg' }],
   },
-  greeting: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 4,
-  },
-  userName: {
+  brandName: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '900',
+    letterSpacing: -1.5,
   },
-  logoSmall: {
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },

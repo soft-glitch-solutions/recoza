@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, RefreshControl, Linking, Share, Alert } from 'react-native';
 import { useState, useCallback, useEffect } from 'react';
-import { 
-  Users, 
-  UserPlus, 
-  Search, 
-  Mail, 
+import {
+  Users,
+  UserPlus,
+  Search,
+  Mail,
   Package,
   X,
   Plus,
@@ -30,6 +30,7 @@ import QRCode from 'react-native-qrcode-svg';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 import { HouseholdConnection } from '@/types';
 
@@ -49,14 +50,15 @@ interface PendingInvite {
 export default function NetworkScreen() {
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
-  
+  const { colors } = useTheme();
+
   // Safely get households with default empty array
   const recyclablesContext = useRecyclables() || {};
-  const { 
-    householdConnections = [], 
-    createCollection 
+  const {
+    householdConnections = [],
+    createCollection
   } = recyclablesContext;
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -68,7 +70,7 @@ export default function NetworkScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'connected' | 'pending'>('connected');
   const [customLink, setCustomLink] = useState('');
-  
+
   const pendingInvitesFromDb: PendingInvite[] = householdConnections
     .filter(c => c.status === 'pending')
     .map(c => ({
@@ -81,7 +83,7 @@ export default function NetworkScreen() {
     }));
 
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
-  
+
   useEffect(() => {
     setPendingInvites(pendingInvitesFromDb);
   }, [householdConnections]);
@@ -90,16 +92,16 @@ export default function NetworkScreen() {
   const [selectedHousehold, setSelectedHousehold] = useState<HouseholdConnection | null>(null);
   const [modalMessage, setModalMessage] = useState('');
   const [modalTitle, setModalTitle] = useState('');
-  
+
   const activeHouseholds = householdConnections.filter(c => c.status === 'active');
 
-  const filteredHouseholds = activeHouseholds.filter((h: HouseholdConnection) => 
-    h && 
+  const filteredHouseholds = activeHouseholds.filter((h: HouseholdConnection) =>
+    h &&
     (h.householdName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    h.householdEmail?.toLowerCase().includes(searchQuery.toLowerCase()))
+      h.householdEmail?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredPendingInvites = pendingInvites.filter(invite => 
+  const filteredPendingInvites = pendingInvites.filter(invite =>
     (invite.name && invite.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
     invite.inviteCode.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -142,7 +144,7 @@ export default function NetworkScreen() {
   const handleCreateInviteLink = () => {
     const inviteCode = generateInviteCode();
     const inviteLink = generateInviteLink(inviteCode);
-    
+
     // Create new pending invite
     const newInviteObj: PendingInvite = {
       id: `inv${Date.now()}`,
@@ -156,7 +158,7 @@ export default function NetworkScreen() {
     setPendingInvites([newInviteObj, ...pendingInvites]);
     setShowAddModal(false);
     setCustomLink('');
-    
+
     showSuccess(
       'Invite Link Created! 🔗',
       'Your invite link has been created. Share it with others to join your network.'
@@ -267,14 +269,14 @@ export default function NetworkScreen() {
   const collectorInviteLink = generateInviteLink(collectorInviteCode);
 
   // Feedback Modal Component
-  const FeedbackModal = ({ 
-    visible, 
-    onClose, 
+  const FeedbackModal = ({
+    visible,
+    onClose,
     type,
     onConfirm
-  }: { 
-    visible: boolean; 
-    onClose: () => void; 
+  }: {
+    visible: boolean;
+    onClose: () => void;
     type: 'success' | 'error' | 'info' | 'warning' | 'confirm';
     onConfirm?: () => void;
   }) => {
@@ -282,33 +284,33 @@ export default function NetworkScreen() {
       switch (type) {
         case 'success':
           return {
-            icon: <CheckCircle size={48} color="#10B981" />,
-            gradient: ['#10B981', '#059669'] as const,
-            bgColor: '#D1FAE5',
+            icon: <CheckCircle size={48} color={colors.primary} />,
+            color: colors.primary,
+            bgColor: '#DCFCE7',
           };
         case 'error':
           return {
-            icon: <AlertCircle size={48} color="#EF4444" />,
-            gradient: ['#EF4444', '#DC2626'] as const,
+            icon: <AlertCircle size={48} color={colors.error} />,
+            color: colors.error,
             bgColor: '#FEE2E2',
           };
         case 'warning':
           return {
-            icon: <AlertCircle size={48} color="#F59E0B" />,
-            gradient: ['#F59E0B', '#D97706'] as const,
-            bgColor: '#FEF3C7',
+            icon: <AlertCircle size={48} color={colors.secondary} />,
+            color: colors.secondary,
+            bgColor: '#FDF2E9',
           };
         case 'confirm':
           return {
-            icon: <Info size={48} color="#3B82F6" />,
-            gradient: ['#3B82F6', '#2563EB'] as const,
-            bgColor: '#DBEAFE',
+            icon: <Info size={48} color={colors.info} />,
+            color: colors.info,
+            bgColor: '#E0F2FE',
           };
         case 'info':
           return {
-            icon: <Info size={48} color="#3B82F6" />,
-            gradient: ['#3B82F6', '#2563EB'] as const,
-            bgColor: '#DBEAFE',
+            icon: <Info size={48} color={colors.info} />,
+            color: colors.info,
+            bgColor: '#E0F2FE',
           };
       }
     };
@@ -323,57 +325,42 @@ export default function NetworkScreen() {
         onRequestClose={onClose}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.feedbackModalContent, { paddingBottom: insets.bottom + 20 }]}>
-            <LinearGradient
-              colors={config.gradient}
-              style={styles.feedbackIconContainer}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+          <View style={[styles.feedbackModalContent, { paddingBottom: insets.bottom + 20, backgroundColor: colors.surface }]}>
+            <View
+              style={[styles.feedbackIconContainer, { backgroundColor: config.color }]}
             >
               <View style={[styles.feedbackIconWrapper, { backgroundColor: config.bgColor }]}>
                 {config.icon}
               </View>
-            </LinearGradient>
-            
-            <Text style={styles.feedbackTitle}>{modalTitle}</Text>
-            <Text style={styles.feedbackMessage}>{modalMessage}</Text>
-            
+            </View>
+
+            <Text style={[styles.feedbackTitle, { color: colors.text }]}>{modalTitle}</Text>
+            <Text style={[styles.feedbackMessage, { color: colors.textSecondary }]}>{modalMessage}</Text>
+
             {type === 'confirm' ? (
               <View style={styles.confirmButtonRow}>
                 <TouchableOpacity
-                  style={styles.confirmCancelButton}
+                  style={[styles.confirmCancelButton, { borderColor: colors.border }]}
                   onPress={onClose}
                 >
-                  <Text style={styles.confirmCancelText}>Cancel</Text>
+                  <Text style={[styles.confirmCancelText, { color: colors.textSecondary }]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.confirmOkButton}
+                  style={[styles.confirmOkButton, { backgroundColor: config.color }]}
                   onPress={() => {
                     onConfirm?.();
                     onClose();
                   }}
                 >
-                  <LinearGradient
-                    colors={config.gradient}
-                    style={styles.confirmOkGradient}
-                  >
-                    <Text style={styles.confirmOkText}>Confirm</Text>
-                  </LinearGradient>
+                  <Text style={styles.confirmOkText}>Confirm</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <TouchableOpacity
-                style={styles.feedbackButton}
+                style={[styles.feedbackButton, { backgroundColor: config.color }]}
                 onPress={onClose}
               >
-                <LinearGradient
-                  colors={config.gradient}
-                  style={styles.feedbackButtonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  <Text style={styles.feedbackButtonText}>Got it</Text>
-                </LinearGradient>
+                <Text style={styles.feedbackButtonText}>Got it</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -396,11 +383,11 @@ export default function NetworkScreen() {
 
   if (!profile?.is_collector) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
         <View style={styles.notCollector}>
-          <Home size={64} color={Colors.textLight} />
-          <Text style={styles.notCollectorTitle}>Collector Network</Text>
-          <Text style={styles.notCollectorText}>
+          <Home size={64} color={colors.textLight} />
+          <Text style={[styles.notCollectorTitle, { color: colors.text }]}>Collector Network</Text>
+          <Text style={[styles.notCollectorText, { color: colors.textSecondary }]}>
             Become a collector to build your household network and invite others to join
           </Text>
         </View>
@@ -409,49 +396,46 @@ export default function NetworkScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[Colors.primary, '#059669']}
-        style={[styles.header, { paddingTop: insets.top + 16 }]}
-      >
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 32, backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: colors.borderLight }]}>
         <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>My Network</Text>
-          <TouchableOpacity 
-            style={styles.qrButton}
+          <Text style={[styles.headerTitle, { color: colors.primary }]}>My Network</Text>
+          <TouchableOpacity
+            style={[styles.qrButton, { backgroundColor: colors.accent }]}
             onPress={() => setShowQRModal(true)}
           >
-            <QrCode size={20} color={Colors.white} />
+            <QrCode size={20} color={colors.primary} />
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.inviteCodeSection}>
-          <Text style={styles.inviteCodeLabel}>Your Invite Link</Text>
-          <View style={styles.inviteLinkContainer}>
-            <Text style={styles.inviteLink} numberOfLines={1}>
+          <Text style={[styles.inviteCodeLabel, { color: colors.textSecondary }]}>Your Invite Link</Text>
+          <View style={[styles.inviteLinkContainer, { backgroundColor: colors.surfaceSecondary, borderColor: colors.borderLight }]}>
+            <Text style={[styles.inviteLink, { color: colors.text }]} numberOfLines={1}>
               {collectorInviteLink}
             </Text>
-            <TouchableOpacity 
-              style={styles.copyButton}
+            <TouchableOpacity
+              style={[styles.copyButton, { backgroundColor: colors.primary }]}
               onPress={() => handleCopyInviteLink(collectorInviteLink)}
             >
-              <Copy size={18} color={Colors.white} />
+              <Copy size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
           <View style={styles.inviteCodeRow}>
-            <Text style={styles.inviteCodeLabelSmall}>Code: {collectorInviteCode}</Text>
+            <Text style={[styles.inviteCodeLabelSmall, { color: colors.textSecondary }]}>Code: {collectorInviteCode}</Text>
             <TouchableOpacity onPress={() => handleCopyInviteCode(collectorInviteCode)}>
-              <Copy size={14} color="rgba(255,255,255,0.8)" />
+              <Copy size={14} color={colors.primary} />
             </TouchableOpacity>
           </View>
         </View>
-      </LinearGradient>
+      </View>
 
       <View style={styles.searchContainer}>
-        <Search size={20} color={Colors.textSecondary} />
+        <Search size={20} color={colors.textSecondary} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search by name or invite code..."
-          placeholderTextColor={Colors.textSecondary}
+          placeholderTextColor={colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -459,20 +443,20 @@ export default function NetworkScreen() {
 
       <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'connected' && styles.activeTab]}
+          style={[styles.tab, activeTab === 'connected' && styles.activeTab, activeTab === 'connected' && { borderBottomColor: colors.primary }]}
           onPress={() => setActiveTab('connected')}
         >
-          <Users size={18} color={activeTab === 'connected' ? Colors.primary : Colors.textSecondary} />
-          <Text style={[styles.tabText, activeTab === 'connected' && styles.activeTabText]}>
+          <Users size={18} color={activeTab === 'connected' ? colors.primary : colors.textSecondary} />
+          <Text style={[styles.tabText, activeTab === 'connected' && { color: colors.primary }]}>
             Connected ({activeHouseholds.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'pending' && styles.activeTab]}
+          style={[styles.tab, activeTab === 'pending' && styles.activeTab, activeTab === 'pending' && { borderBottomColor: colors.primary }]}
           onPress={() => setActiveTab('pending')}
         >
-          <Link2 size={18} color={activeTab === 'pending' ? Colors.primary : Colors.textSecondary} />
-          <Text style={[styles.tabText, activeTab === 'pending' && styles.activeTabText]}>
+          <Link2 size={18} color={activeTab === 'pending' ? colors.primary : colors.textSecondary} />
+          <Text style={[styles.tabText, activeTab === 'pending' && { color: colors.primary }]}>
             Invites ({pendingInvites.length})
           </Text>
         </TouchableOpacity>
@@ -483,128 +467,109 @@ export default function NetworkScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
         {activeTab === 'connected' ? (
           <>
             <View style={styles.statsRow}>
-              <LinearGradient
-                colors={['#FFFFFF', '#F9FAFB']}
-                style={styles.statCard}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.statValue}>{activeHouseholds.length}</Text>
-                <Text style={styles.statLabel}>Households</Text>
-              </LinearGradient>
-              <LinearGradient
-                colors={['#FFFFFF', '#F9FAFB']}
-                style={styles.statCard}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.statValue}>{totalItemsLogged}</Text>
-                <Text style={styles.statLabel}>Total Items</Text>
-              </LinearGradient>
+              <View style={[styles.statCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}>
+                <Text style={[styles.statValue, { color: colors.text }]}>{activeHouseholds.length}</Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Households</Text>
+              </View>
+              <View style={[styles.statCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight }]}>
+                <Text style={[styles.statValue, { color: colors.text }]}>{totalItemsLogged}</Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Items</Text>
+              </View>
             </View>
 
-            <Text style={styles.sectionTitle}>Connected Households</Text>
-            
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Connected Households</Text>
+
             {filteredHouseholds.length > 0 ? (
               filteredHouseholds.map((household: HouseholdConnection) => (
-                <TouchableOpacity 
-                  key={household.id} 
-                  style={styles.householdCard}
+                <TouchableOpacity
+                  key={household.id}
+                  style={[styles.householdCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
                   onPress={() => handleScheduleCollection(household)}
                 >
-                  <LinearGradient
-                    colors={[Colors.primary + '20', Colors.primary + '10']}
-                    style={styles.householdAvatar}
-                  >
-                    <Text style={styles.householdAvatarText}>
+                  <View style={[styles.householdAvatar, { backgroundColor: colors.accent }]}>
+                    <Text style={[styles.householdAvatarText, { color: colors.primary }]}>
                       {household.householdName?.charAt(0) || '?'}
                     </Text>
-                  </LinearGradient>
+                  </View>
                   <View style={styles.householdInfo}>
-                    <Text style={styles.householdName}>{household.householdName || 'Unknown'}</Text>
+                    <Text style={[styles.householdName, { color: colors.text }]}>{household.householdName || 'Unknown'}</Text>
                     <View style={styles.householdMeta}>
-                      <Mail size={12} color={Colors.textSecondary} />
-                      <Text style={styles.householdEmail}>{household.householdEmail || 'No email'}</Text>
+                      <Mail size={12} color={colors.textSecondary} />
+                      <Text style={[styles.householdEmail, { color: colors.textSecondary }]}>{household.householdEmail || 'No email'}</Text>
                     </View>
                     <View style={styles.householdStats}>
-                      <Package size={12} color={Colors.primary} />
-                      <Text style={styles.householdItemsText}>
+                      <Package size={12} color={colors.primary} />
+                      <Text style={[styles.householdItemsText, { color: colors.primary }]}>
                         {household.totalItemsLogged || 0} items logged
                       </Text>
                     </View>
                   </View>
-                  <ChevronRight size={20} color={Colors.textLight} />
+                  <ChevronRight size={20} color={colors.textLight} />
                 </TouchableOpacity>
               ))
             ) : (
-              <LinearGradient
-                colors={['#FFFFFF', '#F9FAFB']}
-                style={styles.emptyState}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+              <View
+                style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
               >
-                <Users size={48} color={Colors.textLight} />
-                <Text style={styles.emptyStateText}>No households connected</Text>
-                <Text style={styles.emptyStateSubtext}>
+                <Users size={48} color={colors.textLight} />
+                <Text style={[styles.emptyStateText, { color: colors.text }]}>No households connected</Text>
+                <Text style={[styles.emptyStateSubtext, { color: colors.textSecondary }]}>
                   Share your invite link to grow your network
                 </Text>
                 <TouchableOpacity
-                  style={styles.emptyStateButton}
+                  style={[styles.emptyStateButton, { backgroundColor: colors.primary }]}
                   onPress={() => setShowAddModal(true)}
                 >
-                  <Link2 size={20} color={Colors.white} />
+                  <Link2 size={20} color="#FFFFFF" />
                   <Text style={styles.emptyStateButtonText}>Create Invite Link</Text>
                 </TouchableOpacity>
-              </LinearGradient>
+              </View>
             )}
           </>
         ) : (
           <>
-            <Text style={styles.sectionTitle}>Active Invite Links</Text>
-            
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Active Invite Links</Text>
+
             {filteredPendingInvites.length > 0 ? (
               filteredPendingInvites.map((invite) => (
-                <LinearGradient
+                <View
                   key={invite.id}
-                  colors={['#FFFFFF', '#F9FAFB']}
-                  style={styles.inviteCard}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
+                  style={[styles.inviteCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
                 >
                   <View style={styles.inviteHeader}>
                     <View style={styles.inviteInfo}>
                       {invite.name && (
-                        <Text style={styles.inviteName}>{invite.name}</Text>
+                        <Text style={[styles.inviteName, { color: colors.text }]}>{invite.name}</Text>
                       )}
                       <View style={styles.inviteMeta}>
-                        <Clock size={12} color={Colors.warning} />
-                        <Text style={styles.inviteDate}>
+                        <Clock size={12} color={colors.secondary} />
+                        <Text style={[styles.inviteDate, { color: colors.textSecondary }]}>
                           Created {new Date(invite.sentAt).toLocaleDateString()}
                         </Text>
                       </View>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: '#FEF3C7' }]}>
-                      <Clock size={12} color="#F59E0B" />
-                      <Text style={[styles.statusText, { color: '#F59E0B' }]}>Active</Text>
+                      <Clock size={12} color={colors.secondary} />
+                      <Text style={[styles.statusText, { color: colors.secondary }]}>Active</Text>
                     </View>
                   </View>
-                  
+
                   <View style={styles.inviteLinkRow}>
-                    <Link2 size={16} color={Colors.primary} />
-                    <Text style={styles.inviteLinkText} numberOfLines={1}>
+                    <Link2 size={16} color={colors.primary} />
+                    <Text style={[styles.inviteLinkText, { color: colors.textSecondary }]} numberOfLines={1}>
                       {invite.inviteLink}
                     </Text>
                   </View>
 
                   <View style={styles.inviteCodeRow}>
-                    <Text style={styles.inviteCodeLabel}>Code:</Text>
-                    <Text style={styles.inviteCodeValue}>{invite.inviteCode}</Text>
+                    <Text style={[styles.inviteCodeLabel, { color: colors.textSecondary }]}>Code:</Text>
+                    <Text style={[styles.inviteCodeValue, { color: colors.primary }]}>{invite.inviteCode}</Text>
                   </View>
 
                   <View style={styles.inviteActions}>
@@ -612,46 +577,43 @@ export default function NetworkScreen() {
                       style={styles.inviteActionButton}
                       onPress={() => handleCopyInviteLink(invite.inviteLink)}
                     >
-                      <Copy size={16} color={Colors.primary} />
-                      <Text style={styles.inviteActionText}>Copy Link</Text>
+                      <Copy size={16} color={colors.primary} />
+                      <Text style={[styles.inviteActionText, { color: colors.primary }]}>Copy Link</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.inviteActionButton}
                       onPress={() => handleShareInvite(invite.inviteLink, invite.inviteCode)}
                     >
-                      <Share2 size={16} color={Colors.warning} />
-                      <Text style={styles.inviteActionText}>Share</Text>
+                      <Share2 size={16} color={colors.secondary} />
+                      <Text style={[styles.inviteActionText, { color: colors.secondary }]}>Share</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.inviteActionButton}
                       onPress={() => handleCancelInvite(invite)}
                     >
-                      <X size={16} color={Colors.error} />
-                      <Text style={styles.inviteActionText}>Deactivate</Text>
+                      <X size={16} color={colors.error} />
+                      <Text style={[styles.inviteActionText, { color: colors.error }]}>Deactivate</Text>
                     </TouchableOpacity>
                   </View>
-                </LinearGradient>
+                </View>
               ))
             ) : (
-              <LinearGradient
-                colors={['#FFFFFF', '#F9FAFB']}
-                style={styles.emptyState}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+              <View
+                style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
               >
-                <Link2 size={48} color={Colors.textLight} />
-                <Text style={styles.emptyStateText}>No active invites</Text>
-                <Text style={styles.emptyStateSubtext}>
+                <Link2 size={48} color={colors.textLight} />
+                <Text style={[styles.emptyStateText, { color: colors.text }]}>No active invites</Text>
+                <Text style={[styles.emptyStateSubtext, { color: colors.textSecondary }]}>
                   Create an invite link to start growing your network
                 </Text>
                 <TouchableOpacity
-                  style={styles.emptyStateButton}
+                  style={[styles.emptyStateButton, { backgroundColor: colors.primary }]}
                   onPress={() => setShowAddModal(true)}
                 >
-                  <Plus size={20} color={Colors.white} />
+                  <Plus size={20} color="#FFFFFF" />
                   <Text style={styles.emptyStateButtonText}>Create Invite Link</Text>
                 </TouchableOpacity>
-              </LinearGradient>
+              </View>
             )}
           </>
         )}
@@ -686,7 +648,7 @@ export default function NetworkScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create Invite Link</Text>
               <TouchableOpacity onPress={() => setShowAddModal(false)}>
-                <X size={24} color={Colors.text} />
+                <X size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -761,7 +723,7 @@ export default function NetworkScreen() {
               <QRCode
                 value={collectorInviteLink}
                 size={200}
-                color={Colors.primary}
+                color={colors.primary}
                 backgroundColor="white"
               />
             </View>
@@ -818,10 +780,21 @@ export default function NetworkScreen() {
               handleShareInvite(selectedInvite.inviteLink, selectedInvite.inviteCode);
             } else if (modalTitle === 'Deactivate Link') {
               setPendingInvites(pendingInvites.filter(inv => inv.id !== selectedInvite.id));
-            } else if (modalTitle === 'Schedule Collection' && selectedHousehold) {
-              const tomorrow = new Date();
-              tomorrow.setDate(tomorrow.getDate() + 1);
-              scheduleCollection(selectedHousehold.householdId, selectedHousehold.householdName, tomorrow.toISOString(), []);
+            }
+          } else if (selectedHousehold && modalTitle === 'Schedule Collection') {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            if (createCollection) {
+              createCollection({
+                collectorId: user?.id || '',
+                householdId: selectedHousehold.householdId,
+                householdName: selectedHousehold.householdName,
+                scheduledDate: tomorrow.toISOString(),
+                status: 'scheduled',
+                items: [],
+                totalWeight: 0,
+                estimatedEarnings: 0
+              });
             }
           }
           setSelectedInvite(null);
@@ -836,267 +809,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  qrButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  inviteCodeSection: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 16,
-    padding: 16,
-  },
-  inviteCodeLabel: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-    marginBottom: 8,
-  },
-  inviteLinkContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  inviteLink: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.white,
-    fontWeight: '500',
-  },
-  copyButton: {
-    padding: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 8,
-  },
-  inviteCodeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-  },
-  inviteCodeLabelSmall: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    marginHorizontal: 20,
-    marginVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    gap: 12,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: Colors.text,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    marginBottom: 16,
-    backgroundColor: Colors.white,
-    borderRadius: 30,
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 26,
-  },
-  activeTab: {
-    backgroundColor: Colors.primary + '10',
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  activeTabText: {
-    color: Colors.primary,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  statLabel: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 16,
-  },
-  householdCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    gap: 12,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  householdAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  householdAvatarText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  householdInfo: {
-    flex: 1,
-  },
-  householdName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  householdMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  householdEmail: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  householdStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 6,
-  },
-  householdItemsText: {
-    fontSize: 12,
-    color: Colors.primary,
-    fontWeight: '500',
-  },
-  inviteCard: {
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  inviteHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  inviteInfo: {
-    flex: 1,
-  },
-  inviteName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  inviteMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  inviteDate: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  inviteLinkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: Colors.surfaceSecondary,
-    borderRadius: 12,
   },
   inviteLinkText: {
     flex: 1,

@@ -49,8 +49,8 @@ export default function ResetPassword() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>Recoza</Text>
+      <View style={[styles.header, { backgroundColor: '#16A34A' }]}>
+        <Text style={styles.logo}>recoza</Text>
       </View>
       
       <View style={styles.formContainer}>
@@ -130,17 +130,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 80,
+    paddingBottom: 40,
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   logo: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#00A651', // Recoza green
+    fontSize: 48,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -1.5,
   },
   formContainer: {
     flex: 1,
@@ -184,24 +182,18 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   button: {
-    backgroundColor: '#00A651', // Recoza green
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#16A34A',
+    padding: 18,
+    borderRadius: 16,
     alignItems: 'center',
     marginTop: 24,
-    shadowColor: '#00A651',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
   },
   buttonDisabled: {
-    backgroundColor: '#A3D9B1', // Lighter green for disabled state
-    shadowOpacity: 0.1,
+    backgroundColor: '#DCFCE7',
   },
   buttonText: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 16,
   },
   backButton: {
@@ -210,8 +202,8 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   backButtonText: {
-    color: '#00A651', // Recoza green
-    fontSize: 14,
-    fontWeight: '500',
+    color: '#16A34A',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

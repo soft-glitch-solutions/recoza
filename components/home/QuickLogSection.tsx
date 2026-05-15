@@ -47,11 +47,11 @@ export const QuickLogSection: React.FC<QuickLogSectionProps> = ({
 
   const getColorForType = (name: string): [string, string] => {
     const lowercaseName = name.toLowerCase();
-    if (lowercaseName.includes('plastic')) return ['#10B981', '#059669'];
-    if (lowercaseName.includes('glass')) return ['#3B82F6', '#2563EB'];
-    if (lowercaseName.includes('paper')) return ['#F59E0B', '#D97706'];
-    if (lowercaseName.includes('metal')) return ['#6366F1', '#4F46E5'];
-    if (lowercaseName.includes('cardboard')) return ['#8B5CF6', '#7C3AED'];
+    if (lowercaseName.includes('plastic')) return [colors.primary, colors.primaryDark];
+    if (lowercaseName.includes('glass')) return [colors.info, colors.info];
+    if (lowercaseName.includes('paper')) return [colors.secondary, colors.secondary];
+    if (lowercaseName.includes('metal')) return [colors.accent, colors.accent];
+    if (lowercaseName.includes('cardboard')) return [colors.primaryLight, colors.primaryLight];
     return [colors.primary, colors.primaryDark];
   };
 
@@ -92,40 +92,45 @@ export const QuickLogSection: React.FC<QuickLogSectionProps> = ({
         disabled={loading || successVisible}
         style={styles.buttonWrapper}
       >
-        <LinearGradient
-          colors={successVisible ? ['#059669', '#10B981'] : ['#10B981', '#059669']}
-          style={[styles.giantButton, isDesktop && { paddingVertical: 32 }]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <View
+          style={[
+            styles.giantButton, 
+            { 
+              backgroundColor: successVisible ? colors.info : colors.accent,
+              borderWidth: 2,
+              borderColor: successVisible ? colors.info : colors.accent,
+            },
+            isDesktop && { paddingVertical: 32 }
+          ]}
         >
           {loading ? (
-            <ActivityIndicator color="#ffffff" size="large" />
+            <ActivityIndicator color={colors.primary} size="large" />
           ) : successVisible ? (
             <View style={styles.buttonContent}>
-              <View style={styles.iconContainer}>
-                <CheckCircle2 size={isDesktop ? scale(48) : 36} color="#10B981" />
+              <View style={[styles.iconContainer, { backgroundColor: colors.white }]}>
+                <CheckCircle2 size={isDesktop ? scale(48) : 36} color={colors.info} />
               </View>
               <View style={styles.textContainer}>
-                <Text style={styles.buttonPrimaryText}>Logged!</Text>
-                <Text style={styles.buttonSecondaryText}>Your contribution was recorded</Text>
+                <Text style={[styles.buttonPrimaryText, { color: colors.white }]}>Logged!</Text>
+                <Text style={[styles.buttonSecondaryText, { color: 'rgba(255,255,255,0.9)' }]}>Your contribution was recorded</Text>
               </View>
             </View>
           ) : (
             <View style={styles.buttonContent}>
-              <View style={styles.iconContainer}>
-                <Recycle size={isDesktop ? scale(48) : 36} color="#059669" />
+              <View style={[styles.iconContainer, { backgroundColor: colors.white }]}>
+                <Recycle size={isDesktop ? scale(48) : 36} color={colors.primary} />
               </View>
               <View style={styles.textContainer}>
-                <Text style={[styles.buttonPrimaryText, isDesktop && { fontSize: scale(24) }]}>
+                <Text style={[styles.buttonPrimaryText, { color: colors.primary }, isDesktop && { fontSize: scale(24) }]}>
                   Log Item
                 </Text>
-                <Text style={[styles.buttonSecondaryText, isDesktop && { fontSize: scale(16) }]}>
+                <Text style={[styles.buttonSecondaryText, { color: colors.primary }, isDesktop && { fontSize: scale(16) }]}>
                   Tap to choose and log what you have
                 </Text>
               </View>
             </View>
           )}
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
 
       <Modal
@@ -193,14 +198,11 @@ export const QuickLogSection: React.FC<QuickLogSectionProps> = ({
                   style={[styles.typeItem, { backgroundColor: colors.surfaceSecondary, borderColor: colors.borderLight }]}
                   onPress={() => handleSelectType(type.id, type.name)}
                 >
-                  <LinearGradient
-                    colors={getColorForType(type.name)}
-                    style={styles.typeIconContainer}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
+                  <View
+                    style={[styles.typeIconContainer, { backgroundColor: colors.primary }]}
                   >
                     {getIconForType(type.name, 32)}
-                  </LinearGradient>
+                  </View>
                   <Text style={[styles.typeName, { color: colors.text }]}>{type.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -215,13 +217,13 @@ export const QuickLogSection: React.FC<QuickLogSectionProps> = ({
 const styles = StyleSheet.create({
   section: { marginBottom: 32, width: '100%' },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
-  buttonWrapper: { width: '100%', shadowColor: '#10B981', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
-  giantButton: { width: '100%', borderRadius: 24, padding: 24, minHeight: 120, justifyContent: 'center' },
+  buttonWrapper: { width: '100%' },
+  giantButton: { width: '100%', borderRadius: 20, padding: 24, minHeight: 120, justifyContent: 'center' },
   buttonContent: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-  iconContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#ffffff', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+  iconContainer: { width: 60, height: 60, borderRadius: 12, backgroundColor: '#ffffff', justifyContent: 'center', alignItems: 'center' },
   textContainer: { flex: 1 },
-  buttonPrimaryText: { color: '#ffffff', fontSize: 22, fontWeight: '800', marginBottom: 4 },
-  buttonSecondaryText: { color: 'rgba(255, 255, 255, 0.9)', fontSize: 14, fontWeight: '500' },
+  buttonPrimaryText: { color: '#ffffff', fontSize: 24, fontWeight: '900', letterSpacing: -0.5, marginBottom: 2 },
+  buttonSecondaryText: { color: 'rgba(255, 255, 255, 0.9)', fontSize: 15, fontWeight: '600' },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '80%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20, position: 'relative' },

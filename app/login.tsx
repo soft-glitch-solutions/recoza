@@ -124,21 +124,14 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.primary }]}>
-      <LinearGradient
-        colors={[colors.primary, colors.primaryDark]}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.contentContainer,
           {
             maxWidth: layoutConfig.maxContentWidth as any,
-            paddingTop: insets.top + (isDesktop ? 40 : 20),
+            paddingTop: insets.top + (isDesktop ? 60 : 40),
             paddingBottom: insets.bottom + (isDesktop ? 40 : 20),
             paddingHorizontal: layoutConfig.paddingHorizontal,
           }
@@ -157,36 +150,48 @@ export default function LoginScreen() {
         ]}>
           <View style={[styles.leftColumn, { width: layoutConfig.leftWidth as any }]}>
             <View style={styles.logoWrapper}>
-              <View style={[
-                styles.logoContainer,
-                {
-                  width: isDesktop ? 160 : scale(120),
-                  height: isDesktop ? 160 : scale(120),
-                  borderRadius: isDesktop ? 80 : scale(60),
-                }
-              ]}>
-                <Recycle size={isDesktop ? 80 : scale(60)} color="#fff" />
-              </View>
+                <View style={[
+                  styles.logoContainer,
+                  {
+                    width: isDesktop ? 120 : scale(100),
+                    height: isDesktop ? 120 : scale(100),
+                    borderRadius: 32,
+                    backgroundColor: colors.accent,
+                    transform: [{ rotate: '15deg' }],
+                    borderWidth: 4,
+                    borderColor: colors.primary,
+                  }
+                ]}>
+                  <Recycle size={isDesktop ? 60 : scale(50)} color={colors.primary} />
+                </View>
             </View>
             
             <View style={styles.brandContainer}>
               <Text style={[
                 styles.brandName,
-                { fontSize: isDesktop ? 48 : scale(42), textAlign: layoutConfig.textAlign }
+                { 
+                  fontSize: isDesktop ? 56 : scale(52), 
+                  textAlign: layoutConfig.textAlign,
+                  color: colors.primary 
+                }
               ]}>
-                Recoza
+                recoza
               </Text>
               <View style={[
                 styles.taglineContainer,
                 { justifyContent: layoutConfig.textAlign === 'left' ? 'flex-start' : 'center' }
               ]}>
-                <Text style={[styles.taglineText, styles.recycleText]}>Recycle.</Text>
-                <Text style={[styles.taglineText, styles.earnText]}> Earn.</Text>
-                <Text style={[styles.taglineText, styles.sustainText]}> Sustain.</Text>
+                <Text style={[styles.taglineText, { color: colors.primary }]}>Recycle.</Text>
+                <Text style={[styles.taglineText, { color: colors.secondary }]}> Earn.</Text>
+                <Text style={[styles.taglineText, { color: colors.accent }]}> Sustain.</Text>
               </View>
               <Text style={[
                 styles.description,
-                { fontSize: isDesktop ? 16 : scale(15), textAlign: layoutConfig.textAlign }
+                { 
+                  fontSize: isDesktop ? 16 : scale(15), 
+                  textAlign: layoutConfig.textAlign,
+                  color: colors.textSecondary
+                }
               ]}>
                 Join South Africa's community-powered recycling movement. 
                 Turn waste into income while helping the environment.
@@ -283,7 +288,7 @@ export default function LoginScreen() {
                 style={[
                   styles.loginButton,
                   {
-                    backgroundColor: colors.primary,
+                    backgroundColor: colors.secondary,
                     height: isDesktop ? 52 : scale(50),
                     borderRadius: isDesktop ? 26 : scale(25),
                     marginBottom: isDesktop ? 20 : scale(16),
@@ -321,7 +326,7 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={[styles.footerText, { fontSize: isDesktop ? 12 : scale(12) }]}>
+          <Text style={[styles.footerText, { fontSize: isDesktop ? 12 : scale(12), color: colors.textLight }]}>
             Developed by Recoza
           </Text>
         </View>
@@ -338,16 +343,16 @@ const styles = StyleSheet.create({
   leftColumn: { alignItems: 'center' },
   rightColumn: { alignItems: 'center' },
   logoWrapper: { marginBottom: isDesktop ? 24 : verticalScale(20) },
-  logoContainer: { backgroundColor: 'rgba(255, 255, 255, 0.15)', justifyContent: 'center', alignItems: 'center' },
+  logoContainer: { backgroundColor: '#ffffff', justifyContent: 'center', alignItems: 'center' },
   brandContainer: { marginBottom: isDesktop ? 0 : verticalScale(30) },
-  brandName: { fontWeight: '700', color: '#ffffff', marginBottom: 8, letterSpacing: -0.5 },
+  brandName: { fontWeight: '900', color: '#ffffff', marginBottom: 8, letterSpacing: -1.5 },
   taglineContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: isDesktop ? 16 : scale(12) },
   taglineText: { fontSize: isDesktop ? 22 : scale(20), fontWeight: '600' },
   recycleText: { color: '#ffffff' },
   earnText: { color: '#FFD700' },
   sustainText: { color: '#98FB98' },
   description: { color: 'rgba(255, 255, 255, 0.9)', lineHeight: isDesktop ? 24 : scale(22), maxWidth: isDesktop ? 400 : '100%' },
-  formCard: { borderRadius: isDesktop ? 24 : scale(20), width: '100%', maxWidth: isDesktop ? 450 : '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
+  formCard: { borderRadius: 24, width: '100%', maxWidth: isDesktop ? 450 : '100%', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
   formTitle: { fontWeight: '700', marginBottom: 6 },
   formSubtitle: { marginBottom: isDesktop ? 24 : scale(20) },
   inputWrapper: { flexDirection: 'row', alignItems: 'center', borderRadius: isDesktop ? 12 : scale(12), borderWidth: 1, gap: isDesktop ? 10 : scale(10) },

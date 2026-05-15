@@ -36,7 +36,6 @@ interface Achievement {
   unit: string;
   unlocked: boolean;
   color: string;
-  gradient: [string, string];
 }
 
 export default function ImpactScreen() {
@@ -78,8 +77,7 @@ export default function ImpactScreen() {
       current: recyclableItems?.length || 0,
       unit: 'items',
       unlocked: (recyclableItems?.length || 0) >= 1,
-      color: '#10B981',
-      gradient: ['#10B981', '#059669'],
+      color: colors.accent,
     },
     {
       id: '2',
@@ -90,8 +88,7 @@ export default function ImpactScreen() {
       current: totalWeight,
       unit: 'kg',
       unlocked: totalWeight >= 10,
-      color: '#059669',
-      gradient: ['#059669', '#047857'],
+      color: colors.primary,
     },
     {
       id: '3',
@@ -102,8 +99,7 @@ export default function ImpactScreen() {
       current: co2Saved,
       unit: 'kg CO₂',
       unlocked: co2Saved >= 50,
-      color: '#0EA5E9',
-      gradient: ['#0EA5E9', '#0284C7'],
+      color: colors.info,
     },
     {
       id: '4',
@@ -114,8 +110,7 @@ export default function ImpactScreen() {
       current: streak,
       unit: 'days',
       unlocked: streak >= 7,
-      color: '#F59E0B',
-      gradient: ['#F59E0B', '#D97706'],
+      color: colors.secondary,
     },
     {
       id: '5',
@@ -126,8 +121,7 @@ export default function ImpactScreen() {
       current: collectorStats?.totalCollections || 0,
       unit: 'collections',
       unlocked: (collectorStats?.totalCollections || 0) >= 5,
-      color: '#8B5CF6',
-      gradient: ['#8B5CF6', '#7C3AED'],
+      color: colors.primaryDark,
     },
     {
       id: '6',
@@ -138,8 +132,7 @@ export default function ImpactScreen() {
       current: totalWeight,
       unit: 'kg',
       unlocked: totalWeight >= 100,
-      color: '#EC4899',
-      gradient: ['#EC4899', '#DB2777'],
+      color: '#3293ca', // info
     },
   ];
 
@@ -151,34 +144,38 @@ export default function ImpactScreen() {
     headerPaddingBottom: isDesktop ? 30 : isTablet ? 24 : 20,
   };
 
-  const renderImpactCard = (colorsArr: [string, string], icon: any, value: string, label: string) => (
-    <LinearGradient
-      colors={isDark ? ['#1e293b', '#0f172a'] : colorsArr}
-      style={[styles.impactCard, isDesktop && { padding: 24 }, { borderColor: isDark ? '#334155' : 'rgba(255,255,255,0.5)' }]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+  const renderImpactCard = (solidColor: string, icon: any, value: string, label: string) => (
+    <View
+      style={[
+        styles.impactCard, 
+        isDesktop && { padding: 24 }, 
+        { 
+          backgroundColor: colors.surface, 
+          borderColor: colors.borderLight,
+          borderBottomWidth: 4,
+          borderBottomColor: solidColor,
+        }
+      ]}
     >
-      <View style={[styles.impactIconContainer, { backgroundColor: colorsArr[0] }]}>
+      <View style={[styles.impactIconContainer, { backgroundColor: solidColor }]}>
         {icon}
       </View>
       <Text style={[styles.impactValue, isDesktop && { fontSize: 26 }, { color: colors.text }]}>{value}</Text>
       <Text style={[styles.impactLabel, isDesktop && { fontSize: 14 }, { color: colors.textSecondary }]}>{label}</Text>
-    </LinearGradient>
+    </View>
   );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={isDark ? ['#020617', '#0f172a'] : ['#059669', '#047857']}
+      <View
         style={[
           styles.header,
           { 
             paddingTop: insets.top + (isDesktop ? 24 : 16),
             paddingBottom: layout.headerPaddingBottom + 20,
+            backgroundColor: colors.background,
           }
         ]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
       >
         <View style={[
           styles.headerContent,
@@ -190,15 +187,15 @@ export default function ImpactScreen() {
           }
         ]}>
           <View>
-            <Text style={[styles.headerTitle, isDesktop && { fontSize: 36 }]}>
+            <Text style={[styles.headerTitle, isDesktop && { fontSize: 36 }, { color: colors.primary }]}>
               Your Impact
             </Text>
-            <Text style={[styles.headerSubtitle, isDesktop && { fontSize: 18 }]}>
+            <Text style={[styles.headerSubtitle, isDesktop && { fontSize: 18 }, { color: colors.textSecondary }]}>
               Making South Africa greener, one item at a time
             </Text>
           </View>
         </View>
-      </LinearGradient>
+      </View>
 
       {loading ? (
         <View style={{ paddingHorizontal: layout.paddingHorizontal as any, maxWidth: layout.contentMaxWidth as any, alignSelf: 'center', width: '100%', marginTop: -25, marginBottom: isDesktop ? 32 : 24 }}>
@@ -219,22 +216,17 @@ export default function ImpactScreen() {
         <View style={[
           styles.mainStatCard,
           isDesktop && { padding: 28, borderRadius: 28 },
-          { backgroundColor: colors.surface, borderColor: colors.borderLight }
+          { backgroundColor: colors.surface, borderColor: colors.borderLight, borderLeftWidth: 8, borderLeftColor: colors.primary }
         ]}>
           <View style={[
             styles.mainStatIcon,
-            isDesktop && { width: 90, height: 90, borderRadius: 28 }
+            isDesktop && { width: 90, height: 90, borderRadius: 28 },
+            { backgroundColor: colors.accent }
           ]}>
-            <LinearGradient
-              colors={['#10B981', '#059669']}
-              style={StyleSheet.absoluteFill}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-            <Recycle size={isDesktop ? 48 : 36} color="#fff" />
+            <Recycle size={isDesktop ? 48 : 36} color={colors.primary} />
           </View>
           <View style={styles.mainStatContent}>
-            <Text style={[styles.mainStatValue, isDesktop && { fontSize: 52 }, { color: colors.text }]}>
+            <Text style={[styles.mainStatValue, isDesktop && { fontSize: 52 }, { color: colors.primary }]}>
               {totalWeight.toFixed(1)} kg
             </Text>
             <Text style={[styles.mainStatLabel, isDesktop && { fontSize: 18 }, { color: colors.textSecondary }]}>
@@ -272,10 +264,10 @@ export default function ImpactScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.impactGrid}>
-          {renderImpactCard(['#ECFDF5', '#D1FAE5'], <Droplets size={20} color="#fff" />, `${waterSaved.toFixed(0)}L`, 'Water Saved')}
-          {renderImpactCard(['#F0F9FF', '#E0F2FE'], <Globe size={20} color="#fff" />, `${co2Saved.toFixed(1)}kg`, 'CO₂ Prevented')}
-          {renderImpactCard(['#FEF3C7', '#FDE68A'], <Zap size={20} color="#fff" />, `${energySaved.toFixed(1)}kWh`, 'Energy Saved')}
-          {renderImpactCard(['#F0FDF4', '#DCFCE7'], <TreePine size={20} color="#fff" />, treeEquivalent.toFixed(1), 'Trees Saved')}
+          {renderImpactCard(colors.info, <Droplets size={20} color="#fff" />, `${waterSaved.toFixed(0)}L`, 'Water Saved')}
+          {renderImpactCard(colors.primary, <Globe size={20} color="#fff" />, `${co2Saved.toFixed(1)}kg`, 'CO₂ Prevented')}
+          {renderImpactCard(colors.secondary, <Zap size={20} color="#fff" />, `${energySaved.toFixed(1)}kWh`, 'Energy Saved')}
+          {renderImpactCard(colors.accent, <TreePine size={20} color="#fff" />, treeEquivalent.toFixed(1), 'Trees Saved')}
         </View>
 
         <View style={styles.section}>
@@ -297,18 +289,22 @@ export default function ImpactScreen() {
                 ]}
               >
                 <View style={styles.achievementRow}>
-                  <LinearGradient colors={achievement.unlocked ? achievement.gradient : ['#9CA3AF', '#6B7280']} style={styles.achievementIcon} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>{achievement.icon}</LinearGradient>
+                  <View style={[styles.achievementIcon, { backgroundColor: achievement.unlocked ? achievement.color : colors.textLight }]}>
+                    {achievement.icon}
+                  </View>
                   <View style={styles.achievementContent}>
                     <Text style={[styles.achievementTitle, !achievement.unlocked && styles.achievementTitleLocked, { color: colors.text }]}>{achievement.title}</Text>
                     <Text style={[styles.achievementDescription, { color: colors.textSecondary }]}>{achievement.description}</Text>
                   </View>
                   {achievement.unlocked && (
-                    <LinearGradient colors={achievement.gradient} style={styles.unlockedBadge} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}><Text style={styles.unlockedBadgeText}>✓</Text></LinearGradient>
+                    <View style={[styles.unlockedBadge, { backgroundColor: achievement.color }]}>
+                      <Text style={styles.unlockedBadgeText}>✓</Text>
+                    </View>
                   )}
                 </View>
                 <View style={styles.progressContainer}>
                   <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-                    <LinearGradient colors={achievement.unlocked ? achievement.gradient : ['#9CA3AF', '#6B7280']} style={[styles.progressFill, { width: `${Math.min((achievement.current / achievement.requirement) * 100, 100)}%` }]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} />
+                    <View style={[styles.progressFill, { backgroundColor: achievement.unlocked ? achievement.color : colors.textLight, width: `${Math.min((achievement.current / achievement.requirement) * 100, 100)}%` }]} />
                   </View>
                   <Text style={[styles.progressText, { color: colors.textSecondary }]}>{achievement.current.toFixed(1)}/{achievement.requirement} {achievement.unit}</Text>
                 </View>
@@ -326,7 +322,7 @@ export default function ImpactScreen() {
             </View>
             <View style={styles.goalProgressContainer}>
               <View style={[styles.goalProgressBar, { backgroundColor: colors.border }]}>
-                <LinearGradient colors={['#10B981', '#059669']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.goalProgressFill, { width: `${Math.min((weeklyWeight / 5) * 100, 100)}%` }]} />
+                <View style={[styles.goalProgressFill, { backgroundColor: colors.primary, width: `${Math.min((weeklyWeight / 5) * 100, 100)}%` }]} />
               </View>
               <Text style={[styles.goalProgressText, { color: colors.textSecondary }]}>{weeklyWeight.toFixed(1)} / 5 kg</Text>
             </View>
