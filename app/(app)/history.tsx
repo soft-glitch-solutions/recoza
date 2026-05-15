@@ -1,17 +1,19 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { 
-  Package, 
-  Calendar, 
-  ChevronRight, 
-  History, 
+import {
+  Package,
+  Calendar,
+  ChevronRight,
+  History,
   Filter,
+  TrendingUp,
   CheckCircle2,
   Clock,
   ArrowLeft
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -24,13 +26,13 @@ export default function HistoryScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const { profile } = useAuth();
-  const { 
-    recyclableItems = [], 
-    collections = [], 
+  const {
+    recyclableItems = [],
+    collections = [],
     refreshData,
-    loading 
+    loading
   } = useRecyclables();
-  
+
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -63,14 +65,14 @@ export default function HistoryScreen() {
     }));
 
     const combined = [...logs, ...pickups];
-    
+
     // Sort by date descending
     combined.sort((a, b) => b.date.getTime() - a.date.getTime());
 
     // Filter
     if (activeFilter === 'logs') return combined.filter(a => a.type === 'log');
     if (activeFilter === 'pickups') return combined.filter(a => a.type === 'pickup');
-    
+
     return combined;
   }, [recyclableItems, collections, activeFilter]);
 
@@ -78,7 +80,7 @@ export default function HistoryScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 20, backgroundColor: colors.surface, borderBottomColor: colors.borderLight }]}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
@@ -87,14 +89,14 @@ export default function HistoryScreen() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>Activity History</Text>
       </View>
 
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
         <View style={styles.content}>
           {/* Stats Summary */}
-          <StatsCard 
+          <StatsCard
             itemsCount={recyclableItems.length}
             totalWeight={recyclableItems.reduce((acc, item) => acc + (item.estimatedWeightKg || 0), 0)}
             isCollector={isCollector}
@@ -115,7 +117,7 @@ export default function HistoryScreen() {
                 const weight = dayItems.reduce((sum, item) => sum + (item.estimatedWeightKg || 0), 0);
                 const maxWeight = Math.max(...recyclableItems.map(item => item.estimatedWeightKg || 0), 1);
                 const barHeight = (weight / maxWeight) * 100;
-                
+
                 return (
                   <View key={dateStr} style={styles.barWrapper}>
                     {weight > 0 && (
@@ -173,7 +175,7 @@ export default function HistoryScreen() {
             ) : (
               activityList.map((item, index) => {
                 const showDateHeader = index === 0 || activityList[index - 1].date.toDateString() !== item.date.toDateString();
-                
+
                 return (
                   <View key={`${item.type}-${item.id}`}>
                     {showDateHeader && (
@@ -187,21 +189,22 @@ export default function HistoryScreen() {
                       <View style={styles.infographicWrapper}>
                         <View style={[styles.ringOuter, { borderColor: item.type === 'log' ? colors.primary + '30' : colors.info + '30' }]}>
                           <View style={[styles.ringInner, { backgroundColor: item.type === 'log' ? colors.primary + '10' : colors.info + '10' }]}>
-                             <Text style={[styles.weightValue, { color: item.type === 'log' ? colors.primary : colors.info }]}>
-                               {parseFloat(item.subtitle).toFixed(1)}
-                             </Text>
-                             <Text style={[styles.weightUnit, { color: item.type === 'log' ? colors.primary : colors.info }]}>kg</Text>
+                            <Text style={[styles.weightValue, { color: item.type === 'log' ? colors.primary : colors.info }]}>
+                              {parseFloat(item.subtitle).toFixed(1)}
+                            </Text>
+                            <Text style={[styles.weightUnit, { color: item.type === 'log' ? colors.primary : colors.info }]}>kg</Text>
                           </View>
                         </View>
-                        
+
                         <View style={styles.itemContent}>
                           <View style={styles.itemHeader}>
                             <Text style={[styles.itemTitle, { color: colors.text }]}>{item.title}</Text>
                             <View style={[
                               styles.statusBadge,
-                              { backgroundColor: item.status === 'completed' || item.status === 'collected' 
-                                ? (isDark ? '#064E3B' : '#D1FAE5') 
-                                : (isDark ? '#78350F' : '#FEF3C7') 
+                              {
+                                backgroundColor: item.status === 'completed' || item.status === 'collected'
+                                  ? (isDark ? '#064E3B' : '#D1FAE5')
+                                  : (isDark ? '#78350F' : '#FEF3C7')
                               }
                             ]}>
                               <Text style={[
@@ -212,7 +215,7 @@ export default function HistoryScreen() {
                               </Text>
                             </View>
                           </View>
-                          
+
                           <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]}>
                             {item.type === 'log' ? 'Logged contribution' : 'Completed collection'}
                           </Text>

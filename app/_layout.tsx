@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { RecyclablesProvider } from '@/contexts/RecyclablesContext';
 
 function RootLayoutContent() {
   const { isDark } = useTheme();
@@ -25,7 +26,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <RootLayoutContent />
+        <RecyclablesProvider>
+          <RootLayoutContent />
+        </RecyclablesProvider>
       </AuthProvider>
     </ThemeProvider>
   );

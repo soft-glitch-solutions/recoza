@@ -15,6 +15,7 @@ import { SkeletonBlock, SkeletonList } from '@/components/Skeleton';
 import { ChevronRight, ShieldCheck, ArrowRight, UserPlus, CheckCircle, Phone, Zap, Copy, Share2 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Share } from 'react-native';
+import { TutorialOverlay, useTutorial } from '@/components/TutorialOverlay';
 
 const { width } = Dimensions.get('window');
 
@@ -34,6 +35,56 @@ export default function HomeScreen() {
   const [inviteCode, setInviteCode] = useState('');
   const [isLinking, setIsLinking] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const { shouldShow: showTutorial, markTutorialSeen, resetTutorial } = useTutorial();
+
+  // Tutorial steps with approximate screen positions and spotlight sizes
+  const screenW = width / 2;
+  const tutorialSteps = [
+    {
+      id: 'log',
+      title: 'Log Your Recyclables',
+      description: 'Tap here to quickly log your bottles, cans, paper and more. Every item counts towards a greener SA!',
+      targetX: screenW,
+      targetY: 300,
+      spotlightW: width - 40,
+      spotlightH: 90,
+      tooltipPosition: 'bottom' as const,
+      emoji: '♻️',
+    },
+    {
+      id: 'stats',
+      title: 'Your Performance',
+      description: 'Track how much you have recycled and your environmental impact live.',
+      targetX: screenW,
+      targetY: 520,
+      spotlightW: width - 40,
+      spotlightH: 100,
+      tooltipPosition: 'bottom' as const,
+      emoji: '📊',
+    },
+    {
+      id: 'collections',
+      title: 'Collections Tab',
+      description: 'Schedule pickups, manage your collector network and see your earnings.',
+      targetX: screenW,
+      targetY: 750,
+      spotlightW: width - 40,
+      spotlightH: 90,
+      tooltipPosition: 'top' as const,
+      emoji: '🚛',
+    },
+    {
+      id: 'profile',
+      title: 'Your Profile',
+      description: 'Upload your photo, manage your account, and view your collector status here.',
+      targetX: width - 42,
+      targetY: 96,
+      spotlightW: 52,
+      spotlightH: 52,
+      tooltipPosition: 'bottom' as const,
+      emoji: '👤',
+    },
+  ];
 
   const scale = useSharedValue(1);
 
@@ -104,8 +155,14 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <TutorialOverlay
+        visible={showTutorial}
+        steps={tutorialSteps}
+        onComplete={markTutorialSeen}
+        onSkip={markTutorialSeen}
+      />
       <View style={{ zIndex: 1000 }}>
-        <Header />
+        <Header onResetTutorial={resetTutorial} />
       </View>
 
       <ScrollView
