@@ -6,6 +6,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { RecyclablesProvider } from '@/contexts/RecyclablesContext';
 
+import { FeedbackProvider } from '@/contexts/FeedbackContext';
+
 function RootLayoutContent() {
   const { isDark } = useTheme();
   return (
@@ -27,7 +29,9 @@ export default function RootLayout() {
     <ThemeProvider>
       <AuthProvider>
         <RecyclablesProvider>
-          <RootLayoutContent />
+          <FeedbackProvider>
+            <RootLayoutContent />
+          </FeedbackProvider>
         </RecyclablesProvider>
       </AuthProvider>
     </ThemeProvider>

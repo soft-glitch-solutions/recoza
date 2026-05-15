@@ -1,68 +1,119 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, TextInput } from 'react-native';
-import { 
-  ArrowLeft, 
-  MessageCircle, 
-  Mail, 
-  Phone, 
-  HelpCircle, 
-  ChevronRight, 
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, TextInput, Alert } from 'react-native';
+import {
+  ArrowLeft,
+  MessageCircle,
+  Mail,
+  HelpCircle,
+  ChevronRight,
+  ChevronDown,
   FileText,
   LifeBuoy,
-  Send
+  Send,
+  ExternalLink
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useFeedback } from '@/contexts/FeedbackContext';
+
+const FAQ_DATA = [
+  {
+    question: 'How do I schedule a collection?',
+    answer: 'Go to the Collections tab, find your linked collector in "My Network", and tap the calendar icon to schedule a pickup day. Your collector will see the appointment and confirm.'
+  },
+  {
+    question: 'What items can I recycle?',
+    answer: 'Recoza supports glass, plastic (PET, HDPE), paper, cardboard, cans (aluminium & steel), e-waste, and organic materials. Tap "Log Items" on the home screen to see all supported categories.'
+  },
+  {
+    question: 'How are rewards calculated?',
+    answer: 'Rewards are based on the weight and type of recyclables collected. Collectors set their own rates per kg. You can see estimated earnings before confirming a collection.'
+  },
+  {
+    question: 'How do I become a collector?',
+    answer: 'Go to the Collections tab and tap "Become a Collector". Fill in your motivation and service area. Our team will review your application within 3–5 business days.'
+  },
+  {
+    question: 'Where are the drop-off points?',
+    answer: 'Open the Drop-off tab on the navigation bar to see a map of all nearby drop-off points. You can filter by material type and get directions directly from the app.'
+  },
+  {
+    question: 'How do I link with a collector?',
+    answer: 'Ask your collector to share their invite code. Go to the Home screen, enter the code in the "Link a Collector" section, and tap the arrow to connect.'
+  },
+  {
+    question: 'Is my personal data safe?',
+    answer: 'Yes. Recoza uses Supabase with row-level security ensuring only you can access your data. We never sell personal information. Read our full Privacy Policy at recoza.co.za/privacy.'
+  },
+];
 
 export default function SupportScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { showAlert } = useFeedback();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [message, setMessage] = useState('');
 
-  const handleContact = (type: 'email' | 'call' | 'chat') => {
-    if (type === 'email') Linking.openURL('mailto:support@recoza.co.za');
-    if (type === 'call') Linking.openURL('tel:+27110000000');
-    if (type === 'chat') router.push('/(chat)' as any);
+  const handleContact = (type: 'email' | 'whatsapp') => {
+    if (type === 'email') Linking.openURL('mailto:support@recoza.co.za?subject=Recoza App Support');
+    if (type === 'whatsapp') Linking.openURL('https://wa.me/27110000000?text=Hi Recoza support, I need help with...');
   };
 
-  const FAQItem = ({ question }: { question: string }) => (
-    <TouchableOpacity style={[styles.faqItem, { borderColor: colors.borderLight }]}>
-      <Text style={[styles.faqText, { color: colors.text }]}>{question}</Text>
-      <ChevronRight size={18} color={colors.textLight} />
-    </TouchableOpacity>
-  );
+  const handleSendMessage = () => {
+    if (!message.trim()) {
+      showAlert({ type: 'error', title: 'Empty Message', message: 'Please type your message before sending.' });
+      return;
+    }
+    Linking.openURL(`mailto:support@recoza.co.za?subject=Recoza App Support&body=${encodeURIComponent(message)}`);
+    setMessage('');
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
-        <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surfaceSecondary }]} onPress={() => router.back()}>
+      <View style={[styles.header, { paddingTop: insets.top + 40 }]}>
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: colors.surfaceSecondary }]}
+          onPress={() => router.back()}
+        >
           <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Help & Support</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero */}
         <View style={styles.heroSection}>
           <View style={[styles.heroIcon, { backgroundColor: colors.primary + '15' }]}>
             <LifeBuoy size={40} color={colors.primary} />
           </View>
           <Text style={[styles.heroTitle, { color: colors.text }]}>How can we help?</Text>
           <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
-            Our team is here to assist you with any questions or issues you may have.
+            Browse our FAQs or get in touch with the Recoza team.
           </Text>
         </View>
 
+        {/* Contact options */}
         <View style={styles.contactGrid}>
-          <TouchableOpacity style={[styles.contactCard, { backgroundColor: colors.surface }]} onPress={() => handleContact('chat')}>
-            <View style={[styles.contactIcon, { backgroundColor: colors.primary }]}>
+          <TouchableOpacity
+            style={[styles.contactCard, { backgroundColor: colors.surface }]}
+            onPress={() => handleContact('whatsapp')}
+          >
+            <View style={[styles.contactIcon, { backgroundColor: '#25D366' }]}>
               <MessageCircle size={22} color="#fff" />
             </View>
-            <Text style={[styles.contactLabel, { color: colors.text }]}>Live Chat</Text>
+            <Text style={[styles.contactLabel, { color: colors.text }]}>WhatsApp</Text>
             <Text style={[styles.contactSub, { color: colors.textSecondary }]}>Instant Response</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.contactCard, { backgroundColor: colors.surface }]} onPress={() => handleContact('email')}>
+          <TouchableOpacity
+            style={[styles.contactCard, { backgroundColor: colors.surface }]}
+            onPress={() => handleContact('email')}
+          >
             <View style={[styles.contactIcon, { backgroundColor: colors.secondary }]}>
               <Mail size={22} color="#fff" />
             </View>
@@ -71,38 +122,86 @@ export default function SupportScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* FAQ */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>FREQUENTLY ASKED QUESTIONS</Text>
-          <View style={[styles.faqCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <FAQItem question="How do I schedule a collection?" />
-            <FAQItem question="What items can I recycle?" />
-            <FAQItem question="How are rewards calculated?" />
-            <FAQItem question="How do I become a collector?" />
-            <FAQItem question="Where are the drop-off points?" />
+          <View style={[styles.faqCard, { backgroundColor: colors.surface }]}>
+            {FAQ_DATA.map((item, index) => (
+              <View key={index}>
+                <TouchableOpacity
+                  style={[
+                    styles.faqItem,
+                    index < FAQ_DATA.length - 1 && { borderBottomWidth: 3, borderBottomColor: '#000000' },
+                    openFaq === index && { backgroundColor: colors.surfaceSecondary }
+                  ]}
+                  onPress={() => setOpenFaq(openFaq === index ? null : index)}
+                  activeOpacity={0.7}
+                >
+                  <HelpCircle size={16} color={colors.primary} style={{ marginRight: 12 }} />
+                  <Text style={[styles.faqQuestion, { color: colors.text, flex: 1 }]}>{item.question}</Text>
+                  {openFaq === index
+                    ? <ChevronDown size={18} color={colors.primary} />
+                    : <ChevronRight size={18} color={colors.textLight} />
+                  }
+                </TouchableOpacity>
+                {openFaq === index && (
+                  <View style={[styles.faqAnswer, { backgroundColor: colors.accent + '20' }]}>
+                    <Text style={[styles.faqAnswerText, { color: colors.text }]}>{item.answer}</Text>
+                  </View>
+                )}
+              </View>
+            ))}
           </View>
         </View>
 
+        {/* Send a message */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>SEND A MESSAGE</Text>
-          <View style={[styles.messageCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <TextInput 
-              placeholder="Tell us what's happening..." 
+          <View style={[styles.messageCard, { backgroundColor: colors.surface }]}>
+            <TextInput
+              placeholder="Tell us what's happening..."
               placeholderTextColor={colors.textLight}
               multiline
               numberOfLines={4}
-              style={[styles.messageInput, { color: colors.text }]}
+              value={message}
+              onChangeText={setMessage}
+              style={[styles.messageInput, { color: colors.text, borderColor: colors.borderLight }]}
             />
-            <TouchableOpacity style={[styles.sendButton, { backgroundColor: colors.primary }]}>
+            <TouchableOpacity
+              style={[styles.sendButton, { backgroundColor: colors.primary }]}
+              onPress={handleSendMessage}
+            >
               <Text style={styles.sendButtonText}>Send Message</Text>
               <Send size={18} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.policyLink}>
-          <FileText size={18} color={colors.textSecondary} />
-          <Text style={[styles.policyText, { color: colors.textSecondary }]}>View Help Center & Policies</Text>
-        </TouchableOpacity>
+        {/* Legal links */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>POLICIES & HELP CENTER</Text>
+          <View style={[styles.faqCard, { backgroundColor: colors.surface }]}>
+            {[
+              { label: 'Privacy Policy', url: 'https://recoza.co.za/privacy' },
+              { label: 'Terms of Service', url: 'https://recoza.co.za/terms' },
+              { label: 'Help Center', url: 'https://recoza.co.za/help' },
+            ].map((link, i, arr) => (
+              <TouchableOpacity
+                key={link.url}
+                style={[
+                  styles.faqItem,
+                  i < arr.length - 1 && { borderBottomWidth: 3, borderBottomColor: '#000000' }
+                ]}
+                onPress={() => Linking.openURL(link.url)}
+              >
+                <FileText size={16} color={colors.textSecondary} style={{ marginRight: 12 }} />
+                <Text style={[styles.faqQuestion, { color: colors.text, flex: 1 }]}>{link.label}</Text>
+                <ExternalLink size={16} color={colors.textLight} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
       </ScrollView>
     </View>
   );
@@ -208,14 +307,22 @@ const styles = StyleSheet.create({
   faqItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 18,
-    borderBottomWidth: 3,
-    borderColor: '#000000',
   },
-  faqText: {
+  faqQuestion: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  faqAnswer: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderTopWidth: 2,
+    borderTopColor: '#E5E7EB',
+  },
+  faqAnswerText: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: '500',
   },
   messageCard: {
     padding: 20,
@@ -228,6 +335,9 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 16,
     minHeight: 100,
+    borderWidth: 2,
+    borderRadius: 16,
+    padding: 12,
   },
   sendButton: {
     flexDirection: 'row',
@@ -243,17 +353,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
-  },
-  policyLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 12,
-    padding: 12,
-  },
-  policyText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
 });

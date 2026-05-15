@@ -1,6 +1,6 @@
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
-  Alert, Share, StatusBar, Image, ActivityIndicator 
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Alert, Share, StatusBar, Image, ActivityIndicator
 } from 'react-native';
 import {
   User, Mail, LogOut, ChevronRight, Clock, CheckCircle,
@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useFeedback } from '@/contexts/FeedbackContext';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
@@ -22,6 +23,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, profile, collectorApplication, signOut, isCollector, refreshProfile } = useAuth();
   const { colors, isDark } = useTheme();
+  const { showAlert } = useFeedback();
 
   const { recyclableItems: items = [] } = useRecyclables();
 
@@ -29,34 +31,33 @@ export default function ProfileScreen() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              await signOut();
-              router.replace('/');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to sign out');
-            } finally {
-              setIsLoading(false);
-            }
-          }
-        },
-      ]
-    );
+    showAlert({
+      type: 'confirm',
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      confirmText: 'Sign Out',
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          await signOut();
+          router.replace('/');
+        } catch (error) {
+          showAlert({ type: 'error', title: 'Error', message: 'Failed to sign out' });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    });
   };
 
   const handlePickAvatar = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Please allow access to your photo library to upload a profile picture.');
+      showAlert({
+        type: 'error',
+        title: 'Permission Required',
+        message: 'Please allow access to your photo library to upload a profile picture.'
+      });
       return;
     }
 
@@ -78,15 +79,18 @@ export default function ProfileScreen() {
     try {
       const ext = uri.split('.').pop() || 'jpg';
       const fileName = `${user.id}/avatar.${ext}`;
+      const mimeType = `image/${ext === 'jpg' ? 'jpeg' : ext}`; // Fix for jpg/jpeg
 
       const response = await fetch(uri);
       const blob = await response.blob();
-      const arrayBuffer = await new Response(blob).arrayBuffer();
+
+      // Create a File object with proper MIME type
+      const file = new File([blob], fileName, { type: mimeType });
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, arrayBuffer, {
-          contentType: `image/${ext}`,
+        .upload(fileName, file, {
+          contentType: mimeType,
           upsert: true,
         });
 
@@ -104,10 +108,10 @@ export default function ProfileScreen() {
       if (updateError) throw updateError;
 
       await refreshProfile();
-      Alert.alert('Success', 'Profile picture updated!');
+      showAlert({ type: 'success', title: 'Success', message: 'Profile picture updated!' });
     } catch (error: any) {
       console.error('Avatar upload error:', error);
-      Alert.alert('Upload Failed', error.message || 'Could not upload profile picture.');
+      showAlert({ type: 'error', title: 'Upload Failed', message: error.message || 'Could not upload profile picture.' });
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -147,7 +151,7 @@ export default function ProfileScreen() {
           icon: <Mail size={20} color={colors.secondary} />,
           label: 'Email',
           value: user?.email,
-          onPress: () => Alert.alert('Info', 'Your email is used for recovery'),
+          onPress: () => showAlert({ type: 'info', title: 'Info', message: 'Your email is used for recovery' }),
           bg: '#FDF2E9',
         },
       ],
@@ -165,7 +169,7 @@ export default function ProfileScreen() {
           icon: <Globe size={20} color={colors.info} />,
           label: 'Language',
           value: 'English',
-          onPress: () => Alert.alert('Coming Soon', 'More languages soon'),
+          onPress: () => showAlert({ type: 'info', title: 'Coming Soon', message: 'More languages soon' }),
           bg: '#E0F2FE',
         },
       ],
@@ -193,7 +197,7 @@ export default function ProfileScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" />
 
-      <View style={[styles.header, { backgroundColor: colors.background, paddingTop: insets.top + 40, paddingBottom: 40 }]}>
+      <View style={[styles.header, { backgroundColor: colors.background, paddingTop: insets.top + 60, paddingBottom: 40 }]}>
         <TouchableOpacity onPress={handlePickAvatar} disabled={isUploadingAvatar} style={styles.avatarContainer}>
           {avatarUrl ? (
             <Image source={{ uri: avatarUrl }} style={[styles.avatar, { borderColor: colors.primary }]} />
@@ -202,10 +206,10 @@ export default function ProfileScreen() {
               <Text style={[styles.avatarText, { color: colors.primary }]}>{initials}</Text>
             </View>
           )}
-          
+
           <View style={[styles.cameraOverlay, { backgroundColor: colors.primary, borderColor: colors.background }]}>
-            {isUploadingAvatar 
-              ? <ActivityIndicator size="small" color="#fff" /> 
+            {isUploadingAvatar
+              ? <ActivityIndicator size="small" color="#fff" />
               : <Camera size={14} color="#fff" />
             }
           </View>
@@ -250,7 +254,7 @@ export default function ProfileScreen() {
         </View>
 
         {!isCollector && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.becomeCollectorCard, { backgroundColor: colors.primary, borderColor: '#000000', borderWidth: 3 }]}
             onPress={() => router.push('/collections' as any)}
           >

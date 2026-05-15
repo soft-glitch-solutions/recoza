@@ -317,11 +317,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setHasSeenOnboarding(false);
+    // Do NOT reset hasSeenOnboarding — user has already seen onboarding.
+    // The auth guard will correctly send them to /login (not /onboarding).
     setCollectorApplication(null);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem('hasSeenOnboarding');
-    }
+    setProfile(null);
   };
 
   const refreshProfile = async () => {

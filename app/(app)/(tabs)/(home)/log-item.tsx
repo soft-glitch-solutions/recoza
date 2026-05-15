@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFeedback } from '@/contexts/FeedbackContext';
 import { RecyclableType } from '@/types';
 
 // Common household items with their typical weights (only weight, no price for households)
@@ -97,8 +98,9 @@ export default function LogItemScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { type: preselectedType } = useLocalSearchParams<{ type?: RecyclableType }>();
+  const { preselectedType } = useLocalSearchParams<{ type?: RecyclableType }>();
   const { addRecyclableItem, loading } = useRecyclables();
+  const { showAlert } = useFeedback();
 
   // Check if user is a collector
   const isCollector = user?.is_collector === true;
@@ -123,12 +125,12 @@ export default function LogItemScreen() {
 
   const handleSave = async () => {
     if (!user) {
-      Alert.alert('Error', 'You must be logged in to log items');
+      showAlert({ type: 'error', title: 'Error', message: 'You must be logged in to log items' });
       return;
     }
 
     if (!selectedItem) {
-      Alert.alert('Error', 'Please select an item type');
+      showAlert({ type: 'error', title: 'Error', message: 'Please select an item type' });
       return;
     }
 
@@ -147,17 +149,19 @@ export default function LogItemScreen() {
       });
 
       if (result.success) {
-        Alert.alert(
-          '🎉 Thank You!', 
-          `You've logged ${quantity} ${selectedItem.name}(s) for recycling!\n\n🌍 You helped save ${getCO2Saved().toFixed(1)}kg of CO₂!`,
-          [{ text: 'Awesome!', onPress: () => router.back() }]
-        );
+        showAlert({
+          type: 'success',
+          title: '🎉 Thank You!',
+          message: `You've logged ${quantity} ${selectedItem.name}(s) for recycling!\n\n🌍 You helped save ${getCO2Saved().toFixed(1)}kg of CO₂!`,
+          confirmText: 'Awesome!',
+          onConfirm: () => router.back()
+        });
       } else {
-        Alert.alert('Error', result.error || 'Failed to log item');
+        showAlert({ type: 'error', title: 'Error', message: result.error || 'Failed to log item' });
       }
     } catch (error) {
       console.error('Error logging item:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
+      showAlert({ type: 'error', title: 'Error', message: 'An unexpected error occurred' });
     } finally {
       setIsSaving(false);
     }
@@ -237,14 +241,12 @@ export default function LogItemScreen() {
               <TouchableOpacity 
                 style={styles.customItemCard}
                 onPress={() => {
-                  Alert.alert(
-                    'Custom Item',
-                    'Please describe your item and approximate weight',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'OK', onPress: () => setShowCustom(true) }
-                    ]
-                  );
+                  showAlert({
+                    type: 'confirm',
+                    title: 'Custom Item',
+                    message: 'Please describe your item and approximate weight',
+                    onConfirm: () => setShowCustom(true)
+                  });
                 }}
               >
                 <View style={[styles.itemIcon, { backgroundColor: Colors.primary + '20' }]}>

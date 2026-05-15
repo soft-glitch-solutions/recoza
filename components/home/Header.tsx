@@ -38,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 16, backgroundColor: colors.background }]}>
+    <View style={[styles.container, { paddingTop: insets.top + 24, backgroundColor: colors.background }]}>
       <SideMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       {/* Debug Menu Modal */}

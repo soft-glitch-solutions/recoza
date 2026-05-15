@@ -6,7 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useFeedback } from '@/contexts/FeedbackContext';
 import { Header } from '@/components/home/Header';
+import { WelcomeSection } from '@/components/home/WelcomeSection';
 import { StatsCard } from '@/components/home/StatsCard';
 import { QuickLogSection } from '@/components/home/QuickLogSection';
 import { UpcomingCollections } from '@/components/home/UpcomingCollections';
@@ -24,6 +26,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { profile, linkToCollector, linkedCollector, isCollector, isHousehold, isLoading: authLoading } = useAuth();
   const { colors } = useTheme();
+  const { showAlert } = useFeedback();
 
   console.log('🏠 [HomeScreen] Render logic:', { isCollector, isHousehold, profileId: profile?.id });
   const {
@@ -63,26 +66,52 @@ export default function HomeScreen() {
       emoji: '📊',
     },
     {
-      id: 'collections',
-      title: 'Collections Tab',
-      description: 'Schedule pickups, manage your collector network and see your earnings.',
+      id: 'collections-tab',
+      title: 'Collections & Scheduling',
+      description: 'Here you can schedule pickups and manage your recycler network.',
       targetX: screenW,
-      targetY: 750,
+      targetY: 450,
       spotlightW: width - 40,
-      spotlightH: 90,
+      spotlightH: 180,
       tooltipPosition: 'top' as const,
       emoji: '🚛',
+      onBeforeShow: () => router.push('/collections' as any),
     },
     {
-      id: 'profile',
+      id: 'impact-tab',
+      title: 'Your Impact',
+      description: 'See the real-world difference you are making with trees saved and CO2 reduced.',
+      targetX: screenW,
+      targetY: 350,
+      spotlightW: width - 40,
+      spotlightH: 300,
+      tooltipPosition: 'bottom' as const,
+      emoji: '🌍',
+      onBeforeShow: () => router.push('/impact' as any),
+    },
+    {
+      id: 'profile-tab',
       title: 'Your Profile',
-      description: 'Upload your photo, manage your account, and view your collector status here.',
+      description: 'Manage your account, upload a photo, and check your collector status.',
+      targetX: screenW,
+      targetY: 300,
+      spotlightW: width - 40,
+      spotlightH: 250,
+      tooltipPosition: 'bottom' as const,
+      emoji: '👤',
+      onBeforeShow: () => router.push('/profile' as any),
+    },
+    {
+      id: 'back-home',
+      title: 'Ready to Start?',
+      description: 'You are all set! Start logging items and making an impact today.',
       targetX: width - 42,
       targetY: 96,
       spotlightW: 52,
       spotlightH: 52,
       tooltipPosition: 'bottom' as const,
-      emoji: '👤',
+      emoji: '✨',
+      onBeforeShow: () => router.push('/(tabs)/(home)' as any),
     },
   ];
 
@@ -111,7 +140,11 @@ export default function HomeScreen() {
 
   const handleLinkCollector = async () => {
     if (!inviteCode.trim()) {
-      Alert.alert('Error', 'Please enter an invite code');
+      showAlert({
+        type: 'error',
+        title: 'Error',
+        message: 'Please enter an invite code'
+      });
       return;
     }
 
@@ -121,9 +154,17 @@ export default function HomeScreen() {
 
     if (result.success) {
       setInviteCode('');
-      Alert.alert('Success', 'Collector linked successfully!');
+      showAlert({
+        type: 'success',
+        title: 'Success',
+        message: 'Collector linked successfully!'
+      });
     } else {
-      Alert.alert('Error', result.error || 'Failed to link collector');
+      showAlert({
+        type: 'error',
+        title: 'Error',
+        message: result.error || 'Failed to link collector'
+      });
     }
   };
 
@@ -141,7 +182,11 @@ export default function HomeScreen() {
   const handleCopyCode = async () => {
     if (profile?.invite_code) {
       await Clipboard.setStringAsync(profile.invite_code);
-      Alert.alert('Copied', 'Invite code copied to clipboard!');
+      showAlert({
+        type: 'success',
+        title: 'Copied',
+        message: 'Invite code copied to clipboard!'
+      });
     }
   };
 
@@ -181,6 +226,9 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.content}>
+          {/* 0. Welcome Greeting */}
+          <WelcomeSection />
+
           {/* 1. Quick Log Hero */}
           <QuickLogSection />
 

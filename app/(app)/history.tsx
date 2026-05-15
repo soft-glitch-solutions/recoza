@@ -79,7 +79,7 @@ export default function HistoryScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 20, backgroundColor: colors.surface, borderBottomColor: colors.borderLight }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 40, backgroundColor: colors.surface, borderBottomColor: colors.borderLight }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}

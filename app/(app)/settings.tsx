@@ -1,147 +1,151 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
 import {
   ArrowLeft,
-  Bell,
   Lock,
-  Eye,
   Trash2,
   Smartphone,
-  Moon,
-  Globe,
   Shield,
-  ChevronRight
+  FileText,
+  ChevronRight,
+  LogOut
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useFeedback } from '@/contexts/FeedbackContext';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors, isDark, toggleTheme } = useTheme();
+  const { colors } = useTheme();
   const { signOut, user } = useAuth();
-
-  const [notifications, setNotifications] = useState(true);
-  const [biometrics, setBiometrics] = useState(false);
-  const [marketing, setMarketing] = useState(false);
+  const { showAlert } = useFeedback();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => Alert.alert('Request Sent', 'Your account deletion request has been sent for processing.') }
-      ]
-    );
+    showAlert({
+      type: 'confirm',
+      title: 'Delete Account',
+      message: 'Are you sure you want to delete your account? This action cannot be undone.',
+      confirmText: 'Delete',
+      onConfirm: () => {
+        showAlert({ type: 'success', title: 'Request Sent', message: 'Your account deletion request has been sent for processing.' });
+      }
+    });
   };
 
-  const SettingItem = ({ icon: Icon, label, value, onValueChange, type = 'toggle', color = colors.primary }: any) => (
-    <View style={[styles.settingItem, { borderColor: colors.borderLight }]}>
+  const handleSignOut = () => {
+    showAlert({
+      type: 'confirm',
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      confirmText: 'Sign Out',
+      onConfirm: async () => {
+        setIsLoggingOut(true);
+        try {
+          await signOut();
+          router.replace('/');
+        } catch {
+          showAlert({ type: 'error', title: 'Error', message: 'Failed to sign out. Please try again.' });
+        } finally {
+          setIsLoggingOut(false);
+        }
+      }
+    });
+  };
+
+  const LinkItem = ({ icon: Icon, label, onPress, color = colors.primary }: any) => (
+    <TouchableOpacity
+      style={[styles.settingItem, { borderColor: '#000000' }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={[styles.iconContainer, { backgroundColor: color + '15' }]}>
         <Icon size={20} color={color} />
       </View>
       <Text style={[styles.settingLabel, { color: colors.text }]}>{label}</Text>
-
-      {type === 'toggle' ? (
-        <Switch
-          value={value}
-          onValueChange={onValueChange}
-          trackColor={{ false: colors.border, true: colors.primary }}
-          thumbColor={Platform.OS === 'ios' ? undefined : (value ? colors.white : '#f4f3f4')}
-        />
-      ) : (
-        <ChevronRight size={20} color={colors.textLight} />
-      )}
-    </View>
+      <ChevronRight size={20} color={colors.textLight} />
+    </TouchableOpacity>
   );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
-        <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surfaceSecondary }]} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={[styles.backButton, { backgroundColor: colors.surfaceSecondary }]}
+          onPress={() => router.back()}
+        >
           <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Settings</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>APP PREFERENCES</Text>
-          <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <SettingItem
-              icon={Moon}
-              label="Dark Mode"
-              value={isDark}
-              onValueChange={toggleTheme}
-              color={colors.secondary}
-            />
-            <SettingItem
-              icon={Bell}
-              label="Push Notifications"
-              value={notifications}
-              onValueChange={setNotifications}
-              color={colors.primary}
-            />
-            <SettingItem
-              icon={Globe}
-              label="Language"
-              type="link"
-              color={colors.info}
-            />
-          </View>
-        </View>
 
+        {/* Security & Privacy */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>SECURITY & PRIVACY</Text>
-          <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <SettingItem
+          <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
+            <LinkItem
               icon={Smartphone}
               label="Biometric Login"
-              value={biometrics}
-              onValueChange={setBiometrics}
               color={colors.primary}
+              onPress={() => showAlert({ type: 'info', title: 'Coming Soon', message: 'Biometric login will be available in a future update.' })}
             />
-            <SettingItem
+            <LinkItem
               icon={Lock}
-              label="Privacy Settings"
-              type="link"
-              color={colors.accent}
+              label="Privacy Policy"
+              color="#7C3AED"
+              onPress={() => Linking.openURL('https://recoza.co.za/privacy')}
             />
-            <SettingItem
+            <LinkItem
               icon={Shield}
               label="Terms of Service"
-              type="link"
-              color={colors.textLight}
+              color="#0369A1"
+              onPress={() => Linking.openURL('https://recoza.co.za/terms')}
+            />
+            <LinkItem
+              icon={FileText}
+              label="Help Center"
+              color={colors.secondary}
+              onPress={() => router.push('/support' as any)}
             />
           </View>
         </View>
 
+        {/* Account Actions */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>ACCOUNT ACTIONS</Text>
-          <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+          <View style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
             <TouchableOpacity
-              style={[styles.actionItem, { borderBottomWidth: 1, borderBottomColor: colors.borderLight }]}
-              onPress={signOut}
+              style={[styles.actionItem, { borderBottomWidth: 3, borderBottomColor: '#000000' }]}
+              onPress={handleSignOut}
+              disabled={isLoggingOut}
             >
-              <Trash2 size={20} color="#EF4444" />
-              <Text style={styles.logoutText}>Sign Out</Text>
+              <View style={[styles.iconContainer, { backgroundColor: '#FEE2E2' }]}>
+                <LogOut size={20} color="#EF4444" />
+              </View>
+              <Text style={styles.logoutText}>{isLoggingOut ? 'Signing out…' : 'Sign Out'}</Text>
+              <ChevronRight size={20} color="#EF4444" />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.actionItem}
+              style={[styles.actionItem, { borderBottomWidth: 0 }]}
               onPress={handleDeleteAccount}
             >
-              <Trash2 size={20} color={colors.textLight} />
+              <View style={[styles.iconContainer, { backgroundColor: '#F3F4F6' }]}>
+                <Trash2 size={20} color={colors.textLight} />
+              </View>
               <Text style={[styles.deleteText, { color: colors.textSecondary }]}>Delete Account</Text>
+              <ChevronRight size={20} color={colors.textLight} />
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: colors.textLight }]}>Recoza v1.0.0 Premium Edition</Text>
-          <Text style={[styles.footerText, { color: colors.textLight }]}>User ID: {user?.id.substring(0, 12)}...</Text>
+          <Text style={[styles.footerText, { color: colors.textLight }]}>Recoza v1.0.0</Text>
+          <Text style={[styles.footerText, { color: colors.textLight }]}>Making South Africa Greener 🌿</Text>
         </View>
       </ScrollView>
     </View>
@@ -193,7 +197,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 3,
-    borderColor: '#000000',
   },
   iconContainer: {
     width: 40,
@@ -213,17 +216,18 @@ const styles = StyleSheet.create({
   actionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
-    gap: 16,
-    borderBottomWidth: 3,
-    borderColor: '#000000',
+    padding: 16,
+    gap: 0,
   },
   logoutText: {
+    flex: 1,
     fontSize: 16,
     fontWeight: '700',
     color: '#EF4444',
+    marginLeft: 0,
   },
   deleteText: {
+    flex: 1,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -231,6 +235,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
     alignItems: 'center',
     gap: 4,
+    paddingBottom: 20,
   },
   footerText: {
     fontSize: 12,

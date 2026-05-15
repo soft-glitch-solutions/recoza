@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFeedback } from '@/contexts/FeedbackContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, User, Mail, Phone, Camera, Check } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +24,7 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, refreshProfile } = useAuth();
+  const { showAlert } = useFeedback();
 
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [phoneNumber, setPhoneNumber] = useState(user?.phone_number || '');
@@ -30,7 +32,7 @@ export default function EditProfileScreen() {
 
   const handleSave = async () => {
     if (!fullName.trim()) {
-      Alert.alert('Error', 'Please enter your name');
+      showAlert({ type: 'error', title: 'Error', message: 'Please enter your name' });
       return;
     }
 
@@ -48,11 +50,15 @@ export default function EditProfileScreen() {
       if (error) throw error;
 
       await refreshProfile();
-      Alert.alert('Success', 'Profile updated successfully');
-      router.back();
+      showAlert({ 
+        type: 'success', 
+        title: 'Success', 
+        message: 'Profile updated successfully',
+        onConfirm: () => router.back()
+      });
     } catch (error) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile');
+      showAlert({ type: 'error', title: 'Error', message: 'Failed to update profile' });
     } finally {
       setIsLoading(false);
     }

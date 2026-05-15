@@ -28,6 +28,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useFeedback } from '@/contexts/FeedbackContext';
 
 // 1. Extracted FeedbackModal Component
 interface FeedbackModalProps {
@@ -84,6 +85,7 @@ export default function CollectionsScreen() {
     refreshData,
     createCollection
   } = useRecyclables();
+  const { showAlert } = useFeedback();
   
   const [refreshing, setRefreshing] = useState(false);
   const [showCollectorModal, setShowCollectorModal] = useState(false);
@@ -169,7 +171,7 @@ export default function CollectionsScreen() {
   const handleCopyCode = async () => {
     if (profile?.invite_code) {
       await Clipboard.setStringAsync(profile.invite_code);
-      Alert.alert('Copied', 'Invite code copied to clipboard!');
+      showAlert({ type: 'success', title: 'Copied', message: 'Invite code copied to clipboard!' });
     }
   };
 
@@ -182,26 +184,22 @@ export default function CollectionsScreen() {
     if (phone) {
       Linking.openURL(`tel:${phone}`);
     } else {
-      Alert.alert('No Number', 'Collector phone number not available.');
+      showAlert({ type: 'error', title: 'No Number', message: 'Collector phone number not available.' });
     }
   };
 
   const handleRescheduleRequest = () => {
-    Alert.alert(
-      'Reschedule Request',
-      'Please message your collector to coordinate a new pickup time.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Message Collector', 
-          onPress: () => {
-            if (nextPickup?.collectorPhone) {
-              Linking.openURL(`sms:${nextPickup.collectorPhone}`);
-            }
-          }
+    showAlert({
+      type: 'confirm',
+      title: 'Reschedule Request',
+      message: 'Please message your collector to coordinate a new pickup time.',
+      confirmText: 'Message Collector',
+      onConfirm: () => {
+        if (nextPickup?.collectorPhone) {
+          Linking.openURL(`sms:${nextPickup.collectorPhone}`);
         }
-      ]
-    );
+      }
+    });
   };
 
   if (authLoading) {
@@ -219,7 +217,7 @@ export default function CollectionsScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       showsVerticalScrollIndicator={false}
     >
-      <View style={[styles.header, { paddingTop: insets.top + 20, backgroundColor: colors.surface }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 40, backgroundColor: colors.surface }]}>
         <View>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Collections</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>

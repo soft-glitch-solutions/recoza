@@ -10,6 +10,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFeedback } from '@/contexts/FeedbackContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, Eye, Lock, Fingerprint, History, Bell, Shield, Globe, ChevronRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +21,7 @@ export default function PrivacyScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { showAlert } = useFeedback();
 
   const [settings, setSettings] = useState({
     biometricLogin: false,
@@ -34,32 +36,27 @@ export default function PrivacyScreen() {
   };
 
   const handleChangePassword = () => {
-    Alert.alert(
-      'Change Password',
-      'A password reset link will be sent to your email',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send Link',
-          onPress: () => Alert.alert('Success', 'Password reset link sent to your email'),
-        },
-      ]
-    );
+    showAlert({
+      type: 'confirm',
+      title: 'Change Password',
+      message: 'A password reset link will be sent to your email',
+      confirmText: 'Send Link',
+      onConfirm: () => {
+        showAlert({ type: 'success', title: 'Success', message: 'Password reset link sent to your email' });
+      }
+    });
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'This action cannot be undone. All your data will be permanently deleted.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Account',
-          style: 'destructive',
-          onPress: () => Alert.alert('Account Deleted', 'Your account has been scheduled for deletion'),
-        },
-      ]
-    );
+    showAlert({
+      type: 'confirm',
+      title: 'Delete Account',
+      message: 'This action cannot be undone. All your data will be permanently deleted.',
+      confirmText: 'Delete Account',
+      onConfirm: () => {
+        showAlert({ type: 'error', title: 'Account Deleted', message: 'Your account has been scheduled for deletion' });
+      }
+    });
   };
 
   const sections = [
@@ -85,7 +82,7 @@ export default function PrivacyScreen() {
           icon: <History size={22} color="#F59E0B" />,
           label: 'Login History',
           value: 'Last login: Today',
-          onPress: () => Alert.alert('Coming Soon', 'Login history will be available soon'),
+          onPress: () => showAlert({ type: 'info', title: 'Coming Soon', message: 'Login history will be available soon' }),
           bg: '#FEF3C7',
         },
       ],
@@ -134,7 +131,7 @@ export default function PrivacyScreen() {
           icon: <Shield size={22} color="#6B7280" />,
           label: 'Data Export',
           value: 'Download your data',
-          onPress: () => Alert.alert('Coming Soon', 'Data export will be available soon'),
+          onPress: () => showAlert({ type: 'info', title: 'Coming Soon', message: 'Data export will be available soon' }),
           bg: '#F3F4F6',
         },
       ],

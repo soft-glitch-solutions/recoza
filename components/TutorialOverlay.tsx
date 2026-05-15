@@ -19,6 +19,8 @@ export interface TutorialStep {
   spotlightH: number;
   tooltipPosition: 'top' | 'bottom' | 'center';
   emoji: string;
+  /** Optional: call this before showing the step (e.g., router.push to another tab) */
+  onBeforeShow?: () => void;
 }
 
 interface TutorialOverlayProps {
@@ -38,31 +40,43 @@ export function TutorialOverlay({ visible, steps, onComplete, onSkip }: Tutorial
     if (visible) {
       setCurrentStep(0);
       Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-      pulseRef.current = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.08, duration: 600, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-        ])
-      );
-      pulseRef.current.start();
+      startPulse();
     } else {
       pulseRef.current?.stop();
     }
     return () => pulseRef.current?.stop();
   }, [visible]);
 
+  // Re-trigger pulse on step change
+  useEffect(() => {
+    if (visible) {
+      pulseRef.current?.stop();
+      pulseAnim.setValue(1);
+      startPulse();
+    }
+  }, [currentStep]);
+
+  const startPulse = () => {
+    pulseRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.1, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+      ])
+    );
+    pulseRef.current.start();
+  };
+
   if (!visible || steps.length === 0) return null;
 
   const step = steps[currentStep];
   const isLast = currentStep === steps.length - 1;
 
-  const PAD = 8;
+  const PAD = 10;
   const spotLeft = step.targetX - step.spotlightW / 2 - PAD;
   const spotTop = step.targetY - step.spotlightH / 2 - PAD;
   const spotRight = step.targetX + step.spotlightW / 2 + PAD;
   const spotBottom = step.targetY + step.spotlightH / 2 + PAD;
 
-  // Clamp to screen
   const left = Math.max(0, spotLeft);
   const top = Math.max(0, spotTop);
   const right = Math.min(SCREEN_W, spotRight);
@@ -70,89 +84,90 @@ export function TutorialOverlay({ visible, steps, onComplete, onSkip }: Tutorial
   const holeW = right - left;
   const holeH = bottom - top;
 
-  // Tooltip: position below spotlight if room, else above
-  const belowY = bottom + 20;
-  const aboveY = top - 20;
-  const tooltipH = 220;
+  const TOOLTIP_H = 230;
+  const TOOLTIP_MARGIN = 24;
   let tooltipTop: number;
-  if (step.tooltipPosition === 'bottom' && belowY + tooltipH < SCREEN_H - 20) {
+
+  const belowY = bottom + TOOLTIP_MARGIN;
+  const aboveY = top - TOOLTIP_MARGIN - TOOLTIP_H;
+
+  if (step.tooltipPosition === 'bottom' && belowY + TOOLTIP_H < SCREEN_H - 20) {
     tooltipTop = belowY;
-  } else if (step.tooltipPosition === 'top' && aboveY - tooltipH > 20) {
-    tooltipTop = aboveY - tooltipH;
+  } else if (step.tooltipPosition === 'top' && aboveY > 20) {
+    tooltipTop = aboveY;
   } else {
-    // Fallback: center of screen offset from spotlight
-    tooltipTop = SCREEN_H / 2 + 60;
+    // Fallback: show below the middle of screen if neither fits
+    tooltipTop = SCREEN_H > 700 ? SCREEN_H / 2 + 40 : SCREEN_H - TOOLTIP_H - 20;
   }
-  tooltipTop = Math.min(Math.max(tooltipTop, 20), SCREEN_H - tooltipH - 20);
+  tooltipTop = Math.min(Math.max(tooltipTop, 20), SCREEN_H - TOOLTIP_H - 20);
 
   const dismiss = (cb: () => void) => {
     pulseRef.current?.stop();
     Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(cb);
   };
 
-  const handleNext = () => {
-    if (isLast) {
+  const goToStep = (nextIndex: number) => {
+    if (nextIndex >= steps.length) {
       dismiss(onComplete);
+      return;
+    }
+    const nextStep = steps[nextIndex];
+    if (nextStep.onBeforeShow) {
+      // Navigate first, then wait a frame for the screen to render
+      nextStep.onBeforeShow();
+      setTimeout(() => setCurrentStep(nextIndex), 350);
     } else {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep(nextIndex);
     }
   };
 
+  const handleNext = () => goToStep(currentStep + 1);
   const handleSkip = () => dismiss(onSkip);
+
+  const borderRadius = step.spotlightW > 80 ? 20 : step.spotlightW / 2;
 
   return (
     <Modal transparent visible={visible} animationType="none" statusBarTranslucent>
       <Animated.View style={[styles.root, { opacity: fadeAnim }]} pointerEvents="box-none">
 
-        {/* 4-panel dark mask around spotlight */}
-        {/* TOP panel */}
-        <View style={[styles.maskPanel, { top: 0, left: 0, right: 0, height: top }]} />
-        {/* BOTTOM panel */}
-        <View style={[styles.maskPanel, { top: bottom, left: 0, right: 0, bottom: 0 }]} />
-        {/* LEFT panel (between top and bottom) */}
-        <View style={[styles.maskPanel, { top: top, left: 0, width: left, height: holeH }]} />
-        {/* RIGHT panel (between top and bottom) */}
-        <View style={[styles.maskPanel, { top: top, left: right, right: 0, height: holeH }]} />
+        {/* 4-panel dark mask */}
+        {/* TOP */}
+        <View style={[styles.mask, { top: 0, left: 0, right: 0, height: top }]} />
+        {/* BOTTOM */}
+        <View style={[styles.mask, { top: bottom, left: 0, right: 0, bottom: 0 }]} />
+        {/* LEFT */}
+        <View style={[styles.mask, { top: top, left: 0, width: left, height: holeH }]} />
+        {/* RIGHT */}
+        <View style={[styles.mask, { top: top, left: right, right: 0, height: holeH }]} />
 
-        {/* Animated spotlight border */}
+        {/* Animated green border around spotlight */}
         <Animated.View
           pointerEvents="none"
           style={[
             styles.spotlightBorder,
             {
-              top: top,
-              left: left,
+              top,
+              left,
               width: holeW,
               height: holeH,
-              borderRadius: holeW > 80 ? 20 : holeW / 2,
+              borderRadius,
               transform: [{ scale: pulseAnim }],
             }
           ]}
         />
 
-        {/* Tap anywhere on dark area to advance */}
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
-          onPress={handleNext}
-        />
+        {/* Tap dark area = advance */}
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleNext} />
 
-        {/* Tooltip card — not intercepted by above touch */}
-        <View
-          style={[styles.tooltip, { top: tooltipTop }]}
-          pointerEvents="box-none"
-        >
-          {/* Header row */}
+        {/* Tooltip card */}
+        <View style={[styles.tooltip, { top: tooltipTop }]} pointerEvents="box-none">
           <View style={styles.tooltipHeader}>
             <Text style={styles.emoji}>{step.emoji}</Text>
             <View style={styles.dots}>
               {steps.map((_, i) => (
                 <View
                   key={i}
-                  style={[
-                    styles.dot,
-                    { backgroundColor: i === currentStep ? '#00A651' : '#D1FAE5' }
-                  ]}
+                  style={[styles.dot, { backgroundColor: i === currentStep ? '#00A651' : '#D1FAE5' }]}
                 />
               ))}
             </View>
@@ -178,15 +193,13 @@ export function TutorialOverlay({ visible, steps, onComplete, onSkip }: Tutorial
 }
 
 // ─────────────────────────────────────────────
-// Hook to manage tutorial state
+// Hook
 // ─────────────────────────────────────────────
 export function useTutorial() {
   const [shouldShow, setShouldShow] = useState(false);
   const [checked, setChecked] = useState(false);
 
-  useEffect(() => {
-    checkStatus();
-  }, []);
+  useEffect(() => { checkStatus(); }, []);
 
   const checkStatus = async () => {
     try {
@@ -200,25 +213,16 @@ export function useTutorial() {
   };
 
   const markTutorialSeen = async () => {
-    try {
-      await AsyncStorage.setItem(TUTORIAL_STORAGE_KEY, 'true');
-    } catch {}
+    try { await AsyncStorage.setItem(TUTORIAL_STORAGE_KEY, 'true'); } catch {}
     setShouldShow(false);
   };
 
-  /** Clears storage AND immediately shows the tutorial again */
   const resetTutorial = async () => {
-    try {
-      await AsyncStorage.removeItem(TUTORIAL_STORAGE_KEY);
-    } catch {}
+    try { await AsyncStorage.removeItem(TUTORIAL_STORAGE_KEY); } catch {}
     setShouldShow(true);
   };
 
-  return {
-    shouldShow: checked && shouldShow,
-    markTutorialSeen,
-    resetTutorial,
-  };
+  return { shouldShow: checked && shouldShow, markTutorialSeen, resetTutorial };
 }
 
 // ─────────────────────────────────────────────
@@ -227,9 +231,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 9999,
   },
-  maskPanel: {
+  mask: {
     position: 'absolute',
-    backgroundColor: 'rgba(0,0,0,0.78)',
+    backgroundColor: 'rgba(0,0,0,0.80)',
   },
   spotlightBorder: {
     position: 'absolute',
@@ -258,11 +262,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 14,
   },
-  emoji: { fontSize: 38 },
+  emoji: { fontSize: 36 },
   dots: { flexDirection: 'row', gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   title: { fontSize: 22, fontWeight: '900', color: '#111827', letterSpacing: -0.5, marginBottom: 8 },
-  desc: { fontSize: 15, color: '#6B7280', lineHeight: 22, fontWeight: '500', marginBottom: 24 },
+  desc: { fontSize: 14, color: '#6B7280', lineHeight: 21, fontWeight: '500', marginBottom: 20 },
   actions: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   skipBtn: {
     paddingHorizontal: 20,
@@ -271,7 +275,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#E5E7EB',
   },
-  skipText: { fontSize: 15, fontWeight: '700', color: '#6B7280' },
+  skipText: { fontSize: 14, fontWeight: '700', color: '#6B7280' },
   nextBtn: {
     flex: 1,
     flexDirection: 'row',

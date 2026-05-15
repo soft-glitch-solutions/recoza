@@ -6,11 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFeedback } from '@/contexts/FeedbackContext';
 import { 
   ArrowLeft, 
   HelpCircle, 
@@ -59,6 +59,7 @@ export default function HelpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
+  const { showAlert } = useFeedback();
   const { colors } = useTheme();
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [message, setMessage] = useState('');
@@ -76,16 +77,16 @@ export default function HelpScreen() {
 
   const handleContactSupport = () => {
     if (!message.trim()) {
-      Alert.alert('Error', 'Please enter a message');
+      showAlert({ type: 'error', title: 'Error', message: 'Please enter a message' });
       return;
     }
-    Alert.alert('Message Sent', 'Our support team will get back to you within 24 hours');
+    showAlert({ type: 'success', title: 'Message Sent', message: 'Our support team will get back to you within 24 hours' });
     setMessage('');
   };
 
   const handleOpenLink = (url: string) => {
     Linking.openURL(url).catch(() => 
-      Alert.alert('Error', 'Could not open link')
+      showAlert({ type: 'error', title: 'Error', message: 'Could not open link' })
     );
   };
 
@@ -118,7 +119,7 @@ export default function HelpScreen() {
       icon: <AlertCircle size={24} color="#F59E0B" />,
       title: 'Report an Issue',
       description: 'Technical support',
-      onPress: () => Alert.alert('Report Issue', 'Please describe your issue in the message box below'),
+      onPress: () => showAlert({ type: 'info', title: 'Report Issue', message: 'Please describe your issue in the message box below' }),
       color: '#F59E0B',
       bg: '#FEF3C7',
     },

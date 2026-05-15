@@ -172,7 +172,7 @@ export default function ImpactScreen() {
         style={[
           styles.header,
           { 
-            paddingTop: insets.top + (isDesktop ? 24 : 16),
+            paddingTop: insets.top + (isDesktop ? 32 : 40),
             paddingBottom: layout.headerPaddingBottom + 20,
             backgroundColor: colors.background,
           }
