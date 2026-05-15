@@ -252,36 +252,28 @@ const styles = StyleSheet.create({
   logoutButton: { marginTop: 8, marginBottom: 24, borderRadius: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 20, borderWidth: 3, borderColor: '#000000' },
   logoutText: { fontSize: 18, fontWeight: '900', color: '#EF4444' },
   versionText: { fontSize: 13, textAlign: 'center', fontWeight: '500' },
-  collectorCTA: {
-    padding: 20,
+  becomeCollectorCard: {
+    padding: 24,
     borderRadius: 24,
     marginBottom: 32,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
-  ctaContent: {
+  becomeCollectorContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
   },
-  ctaIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  ctaTextContainer: {
-    flex: 1,
-  },
-  ctaTitle: {
+  becomeCollectorTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '900',
     letterSpacing: -0.5,
   },
-  ctaSubtitle: {
+  becomeCollectorSubtitle: {
     color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: 4,
   },
 });
