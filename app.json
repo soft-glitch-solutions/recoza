@@ -56,6 +56,12 @@
       "image": "./assets/images/SplashScreen.png",
       "backgroundColor": "#ffffff"
     },
-    "owner": "soft-glitch-solution"
+    "owner": "soft-glitch-solution",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0ad34c32-5963-443d-9795-6562d655727c"
+      }
+    }
   }
 }
