@@ -40,28 +40,31 @@ export const StatsCard: React.FC<StatsCardProps> = ({
 const styles = StyleSheet.create({
   statsRowSimple: {
     flexDirection: 'row',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    padding: 20,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: '#000000',
     alignItems: 'center',
+    marginBottom: 24,
   },
   statPillSimple: {
     alignItems: 'center',
     flex: 1,
   },
   statLabelSimple: {
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   statValueSimple: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '900',
   },
   statDivider: {
-    width: 1,
-    height: '60%',
+    width: 2,
+    height: '70%',
+    backgroundColor: '#000000',
   }
 });

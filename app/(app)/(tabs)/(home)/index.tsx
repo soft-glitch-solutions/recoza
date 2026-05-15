@@ -99,10 +99,6 @@ export default function HomeScreen() {
       >
         <View style={styles.content}>
           {/* 1. Quick Log Hero */}
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Start Here</Text>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Log your items quickly</Text>
-          </View>
           <QuickLogSection />
 
           {/* New: Recycling That Pays - Cool Movement Section */}
@@ -369,11 +365,8 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 24,
     marginBottom: 24,
-    shadowColor: '#327331',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   paysContent: {
     flexDirection: 'row',
@@ -403,11 +396,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     transform: [{ rotate: '-10deg' }],
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   linkCard: {
     padding: 20,
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 3,
+    borderColor: '#000000',
     marginBottom: 24,
     flexDirection: 'row',
     gap: 16,
@@ -418,6 +414,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   linkContent: {
     flex: 1,
@@ -443,6 +441,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 14,
     fontWeight: '600',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   linkSubmitButton: {
     width: 48,
@@ -450,11 +450,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   collectorDisplayCard: {
-    padding: 16,
+    padding: 20,
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 3,
+    borderColor: '#000000',
     marginBottom: 24,
   },
   collectorDisplayHeader: {

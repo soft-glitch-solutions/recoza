@@ -64,8 +64,8 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderColor: '#F3F4F6',
+    borderBottomWidth: 3,
+    borderColor: '#000000',
   },
   headerContent: {
     flexDirection: 'row',
@@ -78,11 +78,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   menuButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   brandWrapper: {
     flexDirection: 'row',
@@ -94,6 +96,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 8,
     transform: [{ rotate: '45deg' }],
+    borderWidth: 3,
+    borderColor: '#000000',
   },
   brandName: {
     fontSize: 24,
@@ -110,5 +114,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#000000',
   },
-});
+});

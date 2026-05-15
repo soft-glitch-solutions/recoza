@@ -97,8 +97,8 @@ export const QuickLogSection: React.FC<QuickLogSectionProps> = ({
             styles.giantButton, 
             { 
               backgroundColor: successVisible ? colors.info : colors.accent,
-              borderWidth: 2,
-              borderColor: successVisible ? colors.info : colors.accent,
+              borderWidth: 3,
+              borderColor: '#000000',
             },
             isDesktop && { paddingVertical: 32 }
           ]}
@@ -148,7 +148,10 @@ export const QuickLogSection: React.FC<QuickLogSectionProps> = ({
               styles.modalContent, 
               { 
                 backgroundColor: colors.surface,
-                paddingBottom: insets.bottom + 20 
+                paddingBottom: insets.bottom + 20,
+                borderWidth: 4,
+                borderBottomWidth: 0,
+                borderColor: '#000000',
               }
             ]}
           >
@@ -218,9 +221,9 @@ const styles = StyleSheet.create({
   section: { marginBottom: 32, width: '100%' },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
   buttonWrapper: { width: '100%' },
-  giantButton: { width: '100%', borderRadius: 20, padding: 24, minHeight: 120, justifyContent: 'center' },
+  giantButton: { width: '100%', borderRadius: 24, padding: 24, minHeight: 120, justifyContent: 'center' },
   buttonContent: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-  iconContainer: { width: 60, height: 60, borderRadius: 12, backgroundColor: '#ffffff', justifyContent: 'center', alignItems: 'center' },
+  iconContainer: { width: 64, height: 64, borderRadius: 16, backgroundColor: '#ffffff', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#000000' },
   textContainer: { flex: 1 },
   buttonPrimaryText: { color: '#ffffff', fontSize: 24, fontWeight: '900', letterSpacing: -0.5, marginBottom: 2 },
   buttonSecondaryText: { color: 'rgba(255, 255, 255, 0.9)', fontSize: 15, fontWeight: '600' },
@@ -230,16 +233,16 @@ const styles = StyleSheet.create({
   modalHandle: { width: 40, height: 4, borderRadius: 2 },
   closeButton: { position: 'absolute', right: 0, padding: 4 },
   modalTitle: { fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 16 },
-  quantitySection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 20, marginBottom: 20 },
+  quantitySection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 24, marginBottom: 20, borderWidth: 3, borderColor: '#000000' },
   quantityLabel: { fontSize: 16, fontWeight: '700' },
   quantityControls: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  quantityButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
-  quantityButtonText: { fontSize: 20, fontWeight: '700' },
+  quantityButton: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#000000' },
+  quantityButtonText: { fontSize: 24, fontWeight: '800' },
   quantityValueContainer: { minWidth: 40, alignItems: 'center' },
   quantityValue: { fontSize: 20, fontWeight: '800' },
   modalSubtitle: { fontSize: 14, textAlign: 'center', marginBottom: 24, fontWeight: '600' },
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 20 },
-  typeItem: { width: '46%', borderRadius: 24, padding: 20, alignItems: 'center', marginBottom: 16, borderWidth: 1 },
-  typeIconContainer: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
-  typeName: { fontSize: 16, fontWeight: '700' },
+  typeItem: { width: '46%', borderRadius: 24, padding: 20, alignItems: 'center', marginBottom: 16, borderWidth: 3, borderColor: '#000000' },
+  typeIconContainer: { width: 64, height: 64, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 12, borderWidth: 3, borderColor: '#000000' },
+  typeName: { fontSize: 16, fontWeight: '800' },
 });

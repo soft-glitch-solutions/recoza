@@ -84,15 +84,11 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ items }) => {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 32,
+    borderRadius: 24,
     padding: 24,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    elevation: 4,
-    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: '#000000',
+    marginBottom: 24,
   },
   header: {
     flexDirection: 'row',
@@ -131,27 +127,31 @@ const styles = StyleSheet.create({
     width: (SCREEN_WIDTH - 120) / 7,
   },
   valueLabel: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#000000',
     marginBottom: 8,
     position: 'absolute',
-    top: -25,
+    top: -30,
+    zIndex: 10,
   },
   valueText: {
     fontSize: 10,
     fontWeight: '800',
   },
   barTrack: {
-    width: 14,
+    width: 18,
     height: CHART_HEIGHT - 40,
-    borderRadius: 10,
+    borderRadius: 12,
     justifyContent: 'flex-end',
     overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#000000',
   },
   barFill: {
     width: '100%',
-    borderRadius: 10,
   },
   dayLabel: {
     marginTop: 12,
