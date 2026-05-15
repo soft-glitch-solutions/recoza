@@ -23,11 +23,11 @@
           "action": "VIEW",
           "data": [
             {
-              "scheme": "uthutho",
+              "scheme": "recoza",
               "host": "*"
             },
             {
-              "scheme": "uthutho",
+              "scheme": "recoza",
               "host": "auth",
               "pathPrefix": "/callback"
             }
