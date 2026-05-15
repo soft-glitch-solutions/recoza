@@ -68,7 +68,10 @@ export default function CollectionsScreen() {
     profile,
     applyAsCollector, 
     refreshProfile,
-    collectorApplication 
+    collectorApplication,
+    isCollector,
+    isHousehold,
+    isLoading: authLoading
   } = useAuth();
   
   const { 
@@ -102,7 +105,6 @@ export default function CollectionsScreen() {
     setRefreshing(false);
   }, [refreshProfile, refreshData]);
 
-  const isCollector = profile?.is_collector || profile?.collector_approved || false;
   const statusDisplay = isCollector ? { text: 'Active Collector', color: colors.success } : { text: 'Household', color: colors.primary };
 
   const handleApplyPress = () => {
@@ -155,6 +157,14 @@ export default function CollectionsScreen() {
       Alert.alert('Copied', 'Invite code copied to clipboard!');
     }
   };
+
+  if (authLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView 
@@ -282,7 +292,7 @@ export default function CollectionsScreen() {
           </>
         )}
 
-        {!isCollector && (
+        {isHousehold && (
           <>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Next Pickup</Text>
             <View style={[styles.pickupCard, { backgroundColor: colors.surface }]}>
@@ -295,7 +305,7 @@ export default function CollectionsScreen() {
               </View>
             </View>
 
-            {!profile?.is_collector && !collectorApplication && (
+            {!collectorApplication && (
               <TouchableOpacity style={[styles.becomeCollectorCard, { backgroundColor: colors.primary }]} onPress={handleApplyPress}>
                 <View style={styles.becomeCollectorContent}>
                   <Award size={24} color="#fff" />
@@ -414,5 +424,59 @@ const styles = StyleSheet.create({
   feedbackButton: { paddingHorizontal: 32, paddingVertical: 12, borderRadius: 12 },
   feedbackButtonText: { color: '#fff', fontWeight: '700' },
   emptyState: { padding: 32, alignItems: 'center', justifyContent: 'center' },
-  emptyStateText: { fontSize: 14, marginTop: 8 }
+  emptyStateText: { fontSize: 14, marginTop: 8 },
+  inviteCard: {
+    padding: 20,
+    borderRadius: 24,
+    flexDirection: 'row',
+    gap: 16,
+  },
+  inviteIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inviteContent: {
+    flex: 1,
+  },
+  inviteTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  inviteSubtitle: {
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 16,
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  inviteCodeRow: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+  },
+  inviteCodeBox: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  inviteCodeText: {
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  inviteShareButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

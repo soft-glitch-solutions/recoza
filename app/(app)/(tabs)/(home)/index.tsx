@@ -21,21 +21,19 @@ const { width } = Dimensions.get('window');
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { profile } = useAuth();
+  const { profile, linkToCollector, linkedCollector, isCollector, isHousehold, isLoading: authLoading } = useAuth();
   const { colors } = useTheme();
+
+  console.log('🏠 [HomeScreen] Render logic:', { isCollector, isHousehold, profileId: profile?.id });
   const {
     recyclableItems = [],
     collections = [],
     loading,
     refreshData,
   } = useRecyclables();
-  const { linkToCollector, linkedCollector } = useAuth();
   const [inviteCode, setInviteCode] = useState('');
   const [isLinking, setIsLinking] = useState(false);
-
   const [refreshing, setRefreshing] = useState(false);
-
-  const isCollector = profile?.is_collector || profile?.collector_approved || false;
 
   const scale = useSharedValue(1);
 
@@ -96,6 +94,14 @@ export default function HomeScreen() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={{ zIndex: 1000 }}>
@@ -142,7 +148,7 @@ export default function HomeScreen() {
           {isCollector ? (
             <View style={[styles.inviteCard, { backgroundColor: colors.surface, borderColor: '#000000', borderWidth: 3 }]}>
               <View style={[styles.inviteIconContainer, { backgroundColor: colors.secondary + '20', borderWidth: 2, borderColor: '#000000' }]}>
-                <Users size={24} color={colors.secondary} />
+                <UserPlus size={24} color={colors.secondary} />
               </View>
               <View style={styles.inviteContent}>
                 <Text style={[styles.inviteTitle, { color: colors.text }]}>Grow Your Network</Text>
@@ -167,7 +173,7 @@ export default function HomeScreen() {
                 </View>
               </View>
             </View>
-          ) : !linkedCollector && (
+          ) : isHousehold && !linkedCollector && (
             <View style={[styles.linkCard, { backgroundColor: colors.surface, borderColor: '#000000', borderWidth: 3 }]}>
               <View style={[styles.linkIconContainer, { backgroundColor: colors.accent + '20', borderWidth: 2, borderColor: '#000000' }]}>
                 <UserPlus size={24} color={colors.primary} />
@@ -203,12 +209,13 @@ export default function HomeScreen() {
           )}
 
           {/* 2. Linked Collector Display (For linked households) */}
-          {/* 4. Upcoming Collections */}
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Pickups</Text>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Scheduled recycle collections</Text>
-          </View>
-          {!isCollector && linkedCollector && (
+          {isHousehold && (
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Pickups</Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Scheduled recycle collections</Text>
+            </View>
+          )}
+          {isHousehold && linkedCollector && (
             <View style={[styles.collectorDisplayCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
               <View style={styles.collectorDisplayHeader}>
                 <View style={[styles.avatarSmall, { backgroundColor: colors.accent }]}>

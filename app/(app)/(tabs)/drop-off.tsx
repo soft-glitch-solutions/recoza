@@ -4,6 +4,7 @@ import { MapPin, Phone, Clock, Navigation, Search, Globe, Info } from 'lucide-re
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Header } from '@/components/home/Header';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DropOffSpot {
   id: string;
@@ -52,7 +53,22 @@ const MOCK_SPOTS: DropOffSpot[] = [
 export default function DropOffScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { isCollector } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+
+  if (!isCollector) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <View style={[styles.errorCard, { backgroundColor: colors.surface, borderColor: '#000000', borderWidth: 3, padding: 24, borderRadius: 24, alignItems: 'center' }]}>
+          <Info size={48} color={colors.primary} />
+          <Text style={[styles.errorTitle, { color: colors.text, marginTop: 16 }]}>Collector Only</Text>
+          <Text style={[styles.errorSubtitle, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
+            This feature is only available for registered collectors.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   const filteredSpots = MOCK_SPOTS.filter(spot => 
     spot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -256,6 +272,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     textTransform: 'uppercase',
+  },
+  errorCard: {
+    width: '100%',
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  errorSubtitle: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '500',
   },
   actionRow: {
     flexDirection: 'row',

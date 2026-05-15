@@ -30,6 +30,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Users } from 'lucide-react-native';
+
 
 const { width } = Dimensions.get('window');
 const MENU_WIDTH = width * 0.8;
@@ -40,7 +42,7 @@ interface SideMenuProps {
 }
 
 export const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
-  const { profile, user, signOut } = useAuth();
+  const { profile, user, signOut, isCollector } = useAuth();
   const { colors } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -129,16 +131,16 @@ export const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
 
           <View style={styles.menuContent}>
             <MenuItem icon={Home} label="Home" path="/(home)" color={colors.primary} />
-            
-            {profile?.is_collector ? (
+
+            {isCollector ? (
               <MenuItem icon={Users} label="My Network" path="/collections/network" color={colors.secondary} />
             ) : (
               <MenuItem icon={Package} label="My Collections" path="/collections" color={colors.secondary} />
             )}
-            
+
             <MenuItem icon={Leaf} label="Recycling That Pays" path="/impact" color={colors.primary} />
 
-            {profile?.is_collector && (
+            {isCollector && (
               <MenuItem icon={MapPin} label="Drop-off Spots" path="/drop-off" color={colors.info} />
             )}
 

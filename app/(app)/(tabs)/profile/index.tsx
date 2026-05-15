@@ -22,7 +22,7 @@ import { useState } from 'react';
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user, profile, collectorApplication, signOut } = useAuth();
+  const { user, profile, collectorApplication, signOut, isCollector } = useAuth();
   const { colors, isDark } = useTheme();
 
   const {
@@ -57,7 +57,7 @@ export default function ProfileScreen() {
   };
 
   const statusBadge = (() => {
-    if (profile?.is_collector || profile?.collector_approved) {
+    if (isCollector) {
       return { icon: <CheckCircle size={14} color="#16A34A" />, text: 'Active Collector', color: '#16A34A', bg: '#DCFCE7' };
     }
     if (collectorApplication?.status === 'pending') {
@@ -162,20 +162,18 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {!profile?.is_collector && !profile?.collector_approved && !collectorApplication && (
-          <TouchableOpacity
-            style={[styles.collectorCTA, { backgroundColor: colors.secondary, borderWidth: 3, borderColor: '#000000' }]}
-            onPress={() => router.push('/collections')}
+        {!isCollector && (
+          <TouchableOpacity 
+            style={[styles.becomeCollectorCard, { backgroundColor: colors.primary, borderColor: '#000000', borderWidth: 3 }]}
+            onPress={() => router.push('/collections' as any)}
           >
-            <View style={styles.ctaContent}>
-              <View style={[styles.ctaIconContainer, { backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#000000' }]}>
-                <Award size={24} color={colors.secondary} />
+            <View style={styles.becomeCollectorContent}>
+              <Award size={28} color="#fff" />
+              <View style={{ flex: 1, marginLeft: 16 }}>
+                <Text style={styles.becomeCollectorTitle}>Become a Collector</Text>
+                <Text style={styles.becomeCollectorSubtitle}>Join the network and earn rewards</Text>
               </View>
-              <View style={styles.ctaTextContainer}>
-                <Text style={styles.ctaTitle}>Become a Collector</Text>
-                <Text style={styles.ctaSubtitle}>Earn rewards for every kg you collect from neighbors.</Text>
-              </View>
-              <ChevronRight size={24} color="#FFFFFF" />
+              <ChevronRight size={24} color="#fff" />
             </View>
           </TouchableOpacity>
         )}

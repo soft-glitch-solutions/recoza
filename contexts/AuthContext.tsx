@@ -33,6 +33,8 @@ export interface AuthContextType {
   getCollectorApplication: () => Promise<void>;
   linkToCollector: (inviteCode: string) => Promise<{ success: boolean; error?: string }>;
   linkedCollector: any | null;
+  isCollector: boolean;
+  isHousehold: boolean;
 }
 
 // Create context
@@ -51,6 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Derived state
   const isAuthenticated = !!user;
   const isLoading = loading;
+  const isCollector = profile?.is_collector || profile?.collector_approved || false;
+  const isHousehold = !isCollector;
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -61,6 +65,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) throw error;
+      console.log('👤 [AuthContext] Profile fetched:', {
+        id: data?.id,
+        is_collector: data?.is_collector,
+        collector_approved: data?.collector_approved,
+        invite_code: data?.invite_code
+      });
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -96,6 +106,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (connError) throw connError;
       
+      // Collectors don't need linked collectors
+      const { data: ownProfile } = await supabase
+        .from('user_profiles')
+        .select('is_collector, collector_approved')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (ownProfile?.is_collector || ownProfile?.collector_approved) {
+        setLinkedCollector(null);
+        return;
+      }
+
       if (connection?.collector) {
         setLinkedCollector(connection.collector);
       } else {
@@ -181,6 +203,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Log state changes for debugging
+  useEffect(() => {
+    if (profile) {
+      console.log('🛡️ [AuthContext] Role Update:', {
+        isCollector,
+        isHousehold,
+        raw_is_collector: profile.is_collector,
+        raw_approved: profile.collector_approved
+      });
+    }
+  }, [profile, isCollector, isHousehold]);
 
   const signUp = async (
     email: string,
@@ -429,6 +463,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const linkToCollector = async (inviteCode: string) => {
     try {
       if (!user) throw new Error('Not authenticated');
+      if (isCollector) throw new Error('Collectors cannot link to other collectors.');
 
       // Find collector by invite code
       const { data: collector, error: findError } = await supabase
@@ -486,6 +521,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getCollectorApplication,
     linkToCollector,
     linkedCollector,
+    isCollector,
+    isHousehold,
   };
 
   return (
