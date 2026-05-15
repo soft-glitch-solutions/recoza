@@ -52,6 +52,7 @@ export default function TabLayout() {
           name="impact"
           options={{
             title: 'Impact',
+            href: isCollector ? null : undefined,
             tabBarIcon: ({ color }) => (
               <Leaf size={22} color={color} />
             ),

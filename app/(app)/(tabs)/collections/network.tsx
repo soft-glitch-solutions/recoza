@@ -50,11 +50,12 @@ export default function NetworkScreen() {
   const { user, profile } = useAuth();
   const { colors } = useTheme();
 
-  const recyclablesContext = useRecyclables() || {};
   const {
-    householdConnections = [],
-    createCollection
-  } = recyclablesContext;
+    activeConnections = [],
+    pendingConnections = [],
+    createCollection,
+    refreshData
+  } = useRecyclables();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -67,9 +68,10 @@ export default function NetworkScreen() {
   const [activeTab, setActiveTab] = useState<'connected' | 'pending'>('connected');
   const [customLink, setCustomLink] = useState('');
 
-  const pendingInvitesFromDb: PendingInvite[] = householdConnections
-    .filter(c => c.status === 'pending')
-    .map(c => ({
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+
+  useEffect(() => {
+    const formattedPending: PendingInvite[] = pendingConnections.map(c => ({
       id: c.id,
       name: c.householdName,
       inviteCode: profile?.invite_code || '',
@@ -77,19 +79,15 @@ export default function NetworkScreen() {
       status: 'pending',
       sentAt: c.connectedAt,
     }));
-
-  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
-
-  useEffect(() => {
-    setPendingInvites(pendingInvitesFromDb);
-  }, [householdConnections]);
+    setPendingInvites(formattedPending);
+  }, [pendingConnections]);
 
   const [selectedInvite, setSelectedInvite] = useState<PendingInvite | null>(null);
   const [selectedHousehold, setSelectedHousehold] = useState<HouseholdConnection | null>(null);
   const [modalMessage, setModalMessage] = useState('');
   const [modalTitle, setModalTitle] = useState('');
 
-  const activeHouseholds = householdConnections.filter(c => c.status === 'active');
+  const activeHouseholds = activeConnections;
 
   const filteredHouseholds = activeHouseholds.filter((h: HouseholdConnection) =>
     h &&

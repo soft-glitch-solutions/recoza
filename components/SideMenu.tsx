@@ -138,7 +138,9 @@ export const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
               <MenuItem icon={Package} label="My Collections" path="/collections" color={colors.secondary} />
             )}
 
-            <MenuItem icon={Leaf} label="Recycling That Pays" path="/impact" color={colors.primary} />
+            {isCollector && (
+              <MenuItem icon={Leaf} label="Environmental Impact" path="/impact" color={colors.primary} />
+            )}
 
             {isCollector && (
               <MenuItem icon={MapPin} label="Drop-off Spots" path="/drop-off" color={colors.info} />

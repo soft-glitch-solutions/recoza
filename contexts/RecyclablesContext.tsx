@@ -116,7 +116,7 @@ export const RecyclablesProvider: React.FC<{ children: React.ReactNode }> = ({ c
         scheduledDate: c.scheduled_date,
         status: c.status,
         items: c.items || [],
-        totalWeight: c.total_weight || 0,
+        totalWeight: c.total_weight_kg || 0,
         estimatedEarnings: c.estimated_earnings || 0,
         completedAt: c.completed_at
       }));
@@ -281,9 +281,19 @@ export const RecyclablesProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const createCollection = async (collection: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
+      const dbCollection = {
+        collector_id: collection.collectorId,
+        household_id: collection.householdId,
+        scheduled_date: collection.scheduledDate,
+        status: collection.status,
+        total_weight_kg: collection.totalWeight,
+        estimated_earnings: collection.estimatedEarnings,
+        notes: (collection as any).notes || null
+      };
+
       const { error } = await supabase
         .from('collections' as any)
-        .insert([collection as any]);
+        .insert([dbCollection as any]);
 
       if (error) throw error;
       await fetchCollections();
@@ -296,9 +306,17 @@ export const RecyclablesProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const updateCollection = async (id: string, updates: Partial<Collection>) => {
     try {
+      const dbUpdates: any = {};
+      if (updates.status) dbUpdates.status = updates.status;
+      if (updates.totalWeight !== undefined) dbUpdates.total_weight_kg = updates.totalWeight;
+      if (updates.estimatedEarnings !== undefined) dbUpdates.estimated_earnings = updates.estimatedEarnings;
+      if (updates.completedAt) dbUpdates.completed_at = updates.completedAt;
+      if ((updates as any).actualEarnings !== undefined) dbUpdates.actual_earnings = (updates as any).actualEarnings;
+      if ((updates as any).notes !== undefined) dbUpdates.notes = (updates as any).notes;
+
       const { error } = await supabase
         .from('collections' as any)
-        .update(updates as any)
+        .update(dbUpdates as any)
         .eq('id', id);
 
       if (error) throw error;
