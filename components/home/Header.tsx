@@ -5,6 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { Menu } from 'lucide-react-native';
+import { SideMenu } from '../SideMenu';
+import { useState } from 'react';
 
 interface HeaderProps {
   isDesktop?: boolean;
@@ -24,13 +27,24 @@ export const Header: React.FC<HeaderProps> = ({
   const router = useRouter();
   const { profile } = useAuth();
   const { colors } = useTheme();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16, backgroundColor: colors.background }]}>
+      <SideMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      
       <View style={styles.headerContent}>
-        <View style={styles.brandWrapper}>
-          <View style={[styles.logoDot, { backgroundColor: colors.accent }]} />
-          <Text style={[styles.brandName, { color: colors.primary }]}>recoza</Text>
+        <View style={styles.leftSection}>
+          <TouchableOpacity 
+            style={[styles.menuButton, { backgroundColor: colors.surfaceSecondary }]}
+            onPress={() => setIsMenuOpen(true)}
+          >
+            <Menu size={20} color={colors.primary} />
+          </TouchableOpacity>
+          <View style={styles.brandWrapper}>
+            <View style={[styles.logoDot, { backgroundColor: colors.accent }]} />
+            <Text style={[styles.brandName, { color: colors.primary }]}>recoza</Text>
+          </View>
         </View>
         
         <View style={styles.headerActions}>
@@ -56,6 +70,18 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   brandWrapper: {

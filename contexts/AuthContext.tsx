@@ -31,6 +31,8 @@ export interface AuthContextType {
   applyAsCollector: (motivation: string, area: string) => Promise<{ success: boolean; error?: string; data?: any }>;
   checkCollectorStatus: () => Promise<{ status: string | null; application: any | null }>;
   getCollectorApplication: () => Promise<void>;
+  linkToCollector: (inviteCode: string) => Promise<{ success: boolean; error?: string }>;
+  linkedCollector: any | null;
 }
 
 // Create context
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [collectorApplication, setCollectorApplication] = useState<any | null>(null);
+  const [linkedCollector, setLinkedCollector] = useState<any | null>(null);
 
   // Derived state
   const isAuthenticated = !!user;
@@ -81,6 +84,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const fetchLinkedCollector = async (userId: string) => {
+    try {
+      // First check household_connections
+      const { data: connection, error: connError } = await supabase
+        .from('household_connections')
+        .select('*, collector:user_profiles!household_connections_collector_id_fkey(*)')
+        .eq('household_id', userId)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (connError) throw connError;
+      
+      if (connection?.collector) {
+        setLinkedCollector(connection.collector);
+      } else {
+        // Fallback to referred_by in user_profiles
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('referred_by')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        if (profile?.referred_by) {
+          const { data: collector } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', profile.referred_by)
+            .maybeSingle();
+          setLinkedCollector(collector);
+        } else {
+          setLinkedCollector(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching linked collector:', error);
+      setLinkedCollector(null);
+    }
+  };
+
   // Check local storage for onboarding status (for non-authenticated users)
   const checkLocalOnboardingStatus = () => {
     try {
@@ -104,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         fetchProfile(session.user.id);
         getCollectorApplication();
+        fetchLinkedCollector(session.user.id);
         // Check onboarding status from user metadata
         const onboardingCompleted = session.user.user_metadata?.onboarding_completed || false;
         setHasSeenOnboarding(onboardingCompleted);
@@ -124,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         fetchProfile(session.user.id);
         getCollectorApplication();
+        fetchLinkedCollector(session.user.id);
         const onboardingCompleted = session.user.user_metadata?.onboarding_completed || false;
         setHasSeenOnboarding(onboardingCompleted);
       } else {
@@ -250,6 +294,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       await fetchProfile(user.id);
       await getCollectorApplication();
+      await fetchLinkedCollector(user.id);
     }
   };
 
@@ -381,6 +426,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const linkToCollector = async (inviteCode: string) => {
+    try {
+      if (!user) throw new Error('Not authenticated');
+
+      // Find collector by invite code
+      const { data: collector, error: findError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('invite_code', inviteCode.trim().toUpperCase())
+        .maybeSingle();
+
+      if (findError) throw findError;
+      if (!collector) return { success: false, error: 'Invalid invite code. Please check with your collector.' };
+      if (!collector.is_collector) return { success: false, error: 'This user is not registered as a collector.' };
+      if (collector.id === user.id) return { success: false, error: 'You cannot link to yourself.' };
+
+      // Create connection
+      const { error: linkError } = await supabase
+        .from('household_connections')
+        .insert({
+          collector_id: collector.id,
+          household_id: user.id,
+          status: 'active'
+        });
+
+      if (linkError) throw linkError;
+
+      // Update referred_by as well
+      await supabase
+        .from('user_profiles')
+        .update({ referred_by: collector.id })
+        .eq('id', user.id);
+
+      await refreshProfile();
+      return { success: true };
+    } catch (error) {
+      console.error('Error linking to collector:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Linking failed' };
+    }
+  };
+
   const value = {
     session,
     user,
@@ -398,6 +484,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     applyAsCollector,
     checkCollectorStatus,
     getCollectorApplication,
+    linkToCollector,
+    linkedCollector,
   };
 
   return (

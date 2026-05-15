@@ -1,24 +1,30 @@
 // app/(tabs)/_layout.tsx - FLOATING DESIGN
 import { Tabs } from 'expo-router';
-import { Home, Package, User, Leaf } from 'lucide-react-native';
+import { Home, Package, User, Leaf, MapPin } from 'lucide-react-native';
 import { View, StyleSheet, Platform, Dimensions } from 'react-native';
 import Colors from '@/constants/colors';
 import { RecyclablesProvider } from '@/contexts/RecyclablesContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { BlurView } from 'expo-blur';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 
 export default function TabLayout() {
+  const { profile } = useAuth();
+  const { colors } = useTheme();
+  const isCollector = profile?.is_collector || profile?.collector_approved;
+
   return (
     <RecyclablesProvider>
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarStyle: styles.tabBar,
+          tabBarStyle: [styles.tabBar, { backgroundColor: colors.background, borderTopColor: colors.borderLight }],
           tabBarShowLabel: true,
-          tabBarActiveTintColor: Colors.primary,
-          tabBarInactiveTintColor: '#94A3B8',
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textLight,
           tabBarLabelStyle: styles.tabBarLabel,
         }}
       >
@@ -51,6 +57,18 @@ export default function TabLayout() {
             ),
           }}
         />
+
+        {isCollector && (
+          <Tabs.Screen
+            name="drop-off"
+            options={{
+              title: 'Drop-off',
+              tabBarIcon: ({ color }) => (
+                <MapPin size={22} color={color} />
+              ),
+            }}
+          />
+        )}
         
         <Tabs.Screen
           name="profile"
@@ -68,17 +86,25 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: Platform.OS === 'ios' ? 88 : 64,
+    position: 'absolute',
+    bottom: 24,
+    left: 20,
+    right: 20,
+    height: 64,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    elevation: 0,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-    paddingTop: 10,
+    borderRadius: 32,
+    borderTopWidth: 0,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    paddingBottom: 0,
+    paddingTop: 0,
   },
   tabBarLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
   },
 });
