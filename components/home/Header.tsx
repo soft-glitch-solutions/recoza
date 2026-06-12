@@ -102,7 +102,11 @@ export const Header: React.FC<HeaderProps> = ({
             onLongPress={() => setShowDebugMenu(true)}
             delayLongPress={600}
           >
-
+            {(profile as any)?.avatar_url ? (
+              <Image source={{ uri: (profile as any).avatar_url }} style={styles.avatarImage} />
+            ) : (
+              <User size={20} color={colors.primary} />
+            )}
           </TouchableOpacity>
         </View>
       </View>

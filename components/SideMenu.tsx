@@ -117,8 +117,8 @@ export const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
 
             <View style={styles.profileSection}>
               <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
-                {profile?.avatar_url ? (
-                  <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+                {(profile as any)?.avatar_url ? (
+                  <Image source={{ uri: (profile as any).avatar_url }} style={styles.avatarImage} />
                 ) : (
                   <Text style={[styles.avatarText, { color: colors.primary }]}>
                     {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
