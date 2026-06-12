@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Image } from 'react-native';
 import { User, Menu, Bug, RefreshCw, X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -102,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({
             onLongPress={() => setShowDebugMenu(true)}
             delayLongPress={600}
           >
-            <User size={20} color={colors.primary} />
+
           </TouchableOpacity>
         </View>
       </View>
@@ -164,6 +164,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 3,
     borderColor: '#000000',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   debugOverlay: {
     flex: 1,

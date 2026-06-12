@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Dimensions, TouchableOpacity, TextInput, Alert, ActivityIndicator, Linking } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecyclables } from '@/contexts/RecyclablesContext';
@@ -19,7 +19,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Share } from 'react-native';
 import { TutorialOverlay, useTutorial } from '@/components/TutorialOverlay';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -40,17 +40,49 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const { shouldShow: showTutorial, markTutorialSeen, resetTutorial } = useTutorial();
 
-  // Tutorial steps with approximate screen positions and spotlight sizes
-  const screenW = width / 2;
+  const scrollRef = useRef<ScrollView>(null);
+  const logRef = useRef<View>(null);
+  const statsRef = useRef<View>(null);
+
+  const [logCoords, setLogCoords] = useState({ x: width / 2, y: 300, w: width - 40, h: 90 });
+  const [statsCoords, setStatsCoords] = useState({ x: width / 2, y: 520, w: width - 40, h: 100 });
+
+  const measureElements = () => {
+    if (logRef.current) {
+      logRef.current.measureInWindow((x, y, w, h) => {
+        if (w > 0 && h > 0) {
+          setLogCoords({ x: x + w / 2, y: y + h / 2, w, h });
+        }
+      });
+    }
+    if (statsRef.current) {
+      statsRef.current.measureInWindow((x, y, w, h) => {
+        if (w > 0 && h > 0) {
+          setStatsCoords({ x: x + w / 2, y: y + h / 2, w, h });
+        }
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (showTutorial) {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      setTimeout(measureElements, 350);
+    }
+  }, [showTutorial]);
+
+  const tabW = (width - 40) / 4;
+  const tabY = height - 56;
+
   const tutorialSteps = [
     {
       id: 'log',
       title: 'Log Your Recyclables',
       description: 'Tap here to quickly log your bottles, cans, paper and more. Every item counts towards a greener SA!',
-      targetX: screenW,
-      targetY: 300,
-      spotlightW: width - 40,
-      spotlightH: 90,
+      targetX: logCoords.x,
+      targetY: logCoords.y,
+      spotlightW: logCoords.w,
+      spotlightH: logCoords.h,
       tooltipPosition: 'bottom' as const,
       emoji: '♻️',
     },
@@ -58,60 +90,58 @@ export default function HomeScreen() {
       id: 'stats',
       title: 'Your Performance',
       description: 'Track how much you have recycled and your environmental impact live.',
-      targetX: screenW,
-      targetY: 520,
-      spotlightW: width - 40,
-      spotlightH: 100,
-      tooltipPosition: 'bottom' as const,
+      targetX: statsCoords.x,
+      targetY: statsCoords.y,
+      spotlightW: statsCoords.w,
+      spotlightH: statsCoords.h,
+      tooltipPosition: 'top' as const,
       emoji: '📊',
     },
     {
       id: 'collections-tab',
       title: 'Collections & Scheduling',
-      description: 'Here you can schedule pickups and manage your recycler network.',
-      targetX: screenW,
-      targetY: 450,
-      spotlightW: width - 40,
-      spotlightH: 180,
+      description: 'Manage collections and schedule pickups by tapping the Collections tab in the navigation bar below.',
+      targetX: 20 + tabW * 1 + tabW / 2,
+      targetY: tabY,
+      spotlightW: tabW,
+      spotlightH: 56,
       tooltipPosition: 'top' as const,
       emoji: '🚛',
-      onBeforeShow: () => router.push('/collections' as any),
     },
     {
       id: 'impact-tab',
-      title: 'Your Impact',
-      description: 'See the real-world difference you are making with trees saved and CO2 reduced.',
-      targetX: screenW,
-      targetY: 350,
-      spotlightW: width - 40,
-      spotlightH: 300,
-      tooltipPosition: 'bottom' as const,
-      emoji: '🌍',
-      onBeforeShow: () => router.push('/impact' as any),
+      title: isCollector ? 'Drop-off Spots' : 'Your Impact',
+      description: isCollector 
+        ? 'Find Drop-off Spots on the map in the Drop-off tab below.' 
+        : 'See the real-world difference you are making (trees saved, CO2 reduced) in the Impact tab below.',
+      targetX: 20 + tabW * 2 + tabW / 2,
+      targetY: tabY,
+      spotlightW: tabW,
+      spotlightH: 56,
+      tooltipPosition: 'top' as const,
+      emoji: isCollector ? '📍' : '🌍',
     },
     {
       id: 'profile-tab',
       title: 'Your Profile',
-      description: 'Manage your account, upload a photo, and check your collector status.',
-      targetX: screenW,
-      targetY: 300,
-      spotlightW: width - 40,
-      spotlightH: 250,
-      tooltipPosition: 'bottom' as const,
+      description: 'Access and manage your account, profile details, and collector settings in the Profile tab below.',
+      targetX: 20 + tabW * 3 + tabW / 2,
+      targetY: tabY,
+      spotlightW: tabW,
+      spotlightH: 56,
+      tooltipPosition: 'top' as const,
       emoji: '👤',
-      onBeforeShow: () => router.push('/profile' as any),
     },
     {
-      id: 'back-home',
+      id: 'header-profile',
       title: 'Ready to Start?',
-      description: 'You are all set! Start logging items and making an impact today.',
+      description: 'You are all set! You can also tap your profile photo at the top right to access settings or log out.',
       targetX: width - 42,
-      targetY: 96,
+      targetY: insets.top + 46,
       spotlightW: 52,
       spotlightH: 52,
       tooltipPosition: 'bottom' as const,
       emoji: '✨',
-      onBeforeShow: () => router.push('/(tabs)/(home)' as any),
     },
   ];
 
@@ -211,6 +241,7 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -230,7 +261,9 @@ export default function HomeScreen() {
           <WelcomeSection />
 
           {/* 1. Quick Log Hero */}
-          <QuickLogSection />
+          <View ref={logRef} onLayout={measureElements} pointerEvents="box-none">
+            <QuickLogSection />
+          </View>
 
           {/* New: Recycling That Pays - Cool Movement Section */}
           <TouchableOpacity
@@ -375,11 +408,13 @@ export default function HomeScreen() {
           {loading ? (
             <SkeletonBlock height={100} />
           ) : (
-            <StatsCard
-              itemsCount={recyclableItems.length}
-              totalWeight={recyclableItems.reduce((acc, item) => acc + (item.estimatedWeightKg || 0), 0)}
-              isCollector={isCollector}
-            />
+            <View ref={statsRef} onLayout={measureElements} pointerEvents="box-none">
+              <StatsCard
+                itemsCount={recyclableItems.length}
+                totalWeight={recyclableItems.reduce((acc, item) => acc + (item.estimatedWeightKg || 0), 0)}
+                isCollector={isCollector}
+              />
+            </View>
           )}
 
           {/* 3. Collector Tasks (If applicable) */}

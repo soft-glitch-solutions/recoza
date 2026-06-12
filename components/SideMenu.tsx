@@ -7,6 +7,7 @@ import {
   Dimensions,
   Pressable,
   Modal,
+  Image,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -116,9 +117,13 @@ export const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose }) => {
 
             <View style={styles.profileSection}>
               <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
-                <Text style={[styles.avatarText, { color: colors.primary }]}>
-                  {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                </Text>
+                {profile?.avatar_url ? (
+                  <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+                ) : (
+                  <Text style={[styles.avatarText, { color: colors.primary }]}>
+                    {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </Text>
+                )}
               </View>
               <View style={styles.profileInfo}>
                 <Text style={[styles.userName, { color: colors.text }]}>{profile?.full_name || 'User'}</Text>
@@ -215,6 +220,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 3,
     borderColor: '#000000',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   avatarText: {
     fontSize: 24,
